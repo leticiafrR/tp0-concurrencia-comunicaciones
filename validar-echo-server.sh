@@ -1,8 +1,8 @@
 # Configuración
 SERVER_HOST="server"
-SERVER_PORT=12345        # Ajusta al puerto que use tu servidor
-MSG="Hola_Distribuidos"   # Mensaje de prueba (sin espacios para facilitar nc)
-NETWORK="tp0_testing_net"
+SERVER_PORT=12345
+MSG="Hola_Distribuidos"
+NETWORK="testing_net"
 
 
 # 2. Ejecutamos un contenedor efímero con netcat
