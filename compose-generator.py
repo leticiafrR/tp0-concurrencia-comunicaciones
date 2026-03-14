@@ -42,8 +42,7 @@ def write_line_with_indent(file, line, indent_size=INDENT_LEN):
     file.write(INDENT_STR * indent_size + line + "\n")
 
 def write_header_and_server_definition(file):
-    header = """
-name: tp0
+    header = """name: tp0
 services:
   server:
     container_name: server
@@ -62,9 +61,9 @@ def write_network_definition(file):
 networks:
   testing_net:
     ipam:
-    driver: default
-    config:
-      - subnet: 172.25.125.0/24
+      driver: default
+      config:
+        - subnet: 172.25.125.0/24
 """
     file.write(header)
 
