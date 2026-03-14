@@ -1,18 +1,16 @@
-# Configuración
+#!/bin/bash
+
 SERVER_HOST="server"
 SERVER_PORT=12345
 MSG="Hola_Distribuidos"
-NETWORK="testing_net"
+NETWORK="tp0_testing_net"
 
-
-# 2. Ejecutamos un contenedor efímero con netcat
-# Usamos 'alpine' porque es la imagen más liviana que trae nc
 RESULTADO=$(docker run --rm \
     --network $NETWORK \
-    alpine sh -c "echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT")
+    alpine sh -c "echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT 2>/dev/null" 2>/dev/null)
 
 # 3. Validación de la respuesta
-if [ "$RESULTADO" == "$MSG" ]; then
+if [ "$RESULTADO" == "$MSG" ] && [ ! -z "$RESULTADO" ]; then
     echo "action: test_echo_server | result: success"
     exit 0
 else
