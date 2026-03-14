@@ -9,7 +9,7 @@ services:
       - PYTHONUNBUFFERED=1
       - LOGGING_LEVEL=DEBUG
     volumes:
-      - ./server/config.ini:/server/config.ini
+      - ./server/config.ini:/config.ini
     networks:
       - testing_net
 
@@ -50,7 +50,7 @@ def get_client_definition(client_id):
       - CLI_ID={client_id}
       - CLI_LOG_LEVEL=DEBUG
     volumes:
-      - ./client/config.yaml:/client/config.yaml
+      - ./client/config.yaml:/config.yaml
     networks:
       - testing_net
     depends_on:
