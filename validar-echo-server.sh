@@ -10,7 +10,7 @@ RESULTADO=$(docker run --rm \
     alpine sh -c "echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT 2>/dev/null" 2>/dev/null)
 
 # 3. Validación de la respuesta
-if [ "$RESULTADO" == "$MSG" ] && [ ! -z "$RESULTADO" ]; then
+if [ "$RESULTADO" = "$MSG" ] && [ ! -z "$RESULTADO" ]; then
     echo "action: test_echo_server | result: success"
     exit 0
 else
