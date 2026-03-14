@@ -10,6 +10,9 @@ services:
       - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - ./server/config.ini:/server/config.ini
+  
 """
 
 NETWORK_DEFINITION = """    
@@ -49,6 +52,8 @@ def get_client_definition(client_id):
       - testing_net
     depends_on:
       - server
+    volumes:
+      - ./client/config.yaml:/client/config.yaml
   """
 
 def main():
