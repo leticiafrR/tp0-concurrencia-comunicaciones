@@ -6,7 +6,7 @@ class Server:
     def __init__(self, port, listen_backlog):
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.bind(('', port))
+        self._server_socket.bind(('', port)) # sam to bind on 0.0.0.0
         self._server_socket.listen(listen_backlog)
 
     def run(self):
