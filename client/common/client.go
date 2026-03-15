@@ -35,6 +35,7 @@ func (c *Client) Shutdown() {
 	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
 		fmt.Printf("Gracefull shutdown: Closing connection.\n")
 		c.conn.Close()
+		log.Info("action: close_connection | result: success")
 	} else {
 		fmt.Printf("Gracefull shutdown: No connection to close, this was already closed\n")
 	}
@@ -84,6 +85,7 @@ func (c *Client) StartClientLoop() {
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		if c.conn != nil {
 			c.conn.Close()
+			log.Info("action: close_connection | result: success")
 		}
 
 		if err != nil {

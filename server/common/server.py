@@ -20,11 +20,13 @@ class Server:
         self.__register_signal_handlers()
 
     def shutdown(self, signum, frame):
-        self._server_socket.close()
         self._keep_running = False
+        self._server_socket.close()
+        logging.info("action: close_connection | result: success")
         if not self._is_client_closed:
             self._is_client_closed = True
             self._current_peer.close()
+            logging.info("action: close_connection | result: success")
             os._exit(0)
 
     def run(self):
@@ -63,6 +65,7 @@ class Server:
             if not self._is_client_closed:
                 self._is_client_closed = True
                 self._current_peer.close()
+                logging.info("action: close_connection | result: success")
 
     def __accept_new_connection(self):
         """
