@@ -1,13 +1,29 @@
 import socket
 import logging
+import signal
+import sys
 
 
 class Server:
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGTERM, self.shutdown)
+        signal.signal(signal.SIGINT, self.shutdown)
+
     def __init__(self, port, listen_backlog):
-        # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.bind(('', port)) # sam to bind on 0.0.0.0
+        self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._current_peer :socket.socket
+        self._is_client_closed = False
+        self._keep_running = True
+        self.__register_signal_handlers()
+
+    def shutdown(self, signum, frame):
+        self._server_socket.close()
+        self._keep_running = False
+        if not self._is_client_closed:
+            self._is_client_closed = True
+            self._current_peer.close()
 
     def run(self):
         """
@@ -20,28 +36,31 @@ class Server:
 
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
-        while True:
-            client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(client_sock)
+        while self._keep_running:
+            self._current_peer = self.__accept_new_connection()
+            self.__handle_client_connection()
 
-    def __handle_client_connection(self, client_sock):
+    def __handle_client_connection(self):
         """
         Read message from a specific client socket and closes the socket
 
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+
         try:
             # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
+            msg = self._current_peer.recv(1024).rstrip().decode('utf-8')
+            addr = self._current_peer.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
+            self._current_peer.send("{}\n".format(msg).encode('utf-8'))#aqui se puede ejecutar el handler
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            client_sock.close()
+            if not self._is_client_closed:
+                self._is_client_closed = True
+                self._current_peer.close()
 
     def __accept_new_connection(self):
         """
