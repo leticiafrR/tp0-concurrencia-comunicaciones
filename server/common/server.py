@@ -28,7 +28,7 @@ class Server:
             self._is_client_closed = True
             self._current_peer.close()
             logging.info("action: close_connection | result: success")
-            os._exit(0)
+        os._exit(0)
 
     def run(self):
         """
