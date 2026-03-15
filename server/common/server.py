@@ -14,7 +14,8 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        self._current_peer :socket.socket
+        from typing import Optional
+        self._current_peer: Optional[socket.socket] = None
         self._is_client_closed = False
         self._keep_running = True
         self.__register_signal_handlers()
@@ -23,7 +24,7 @@ class Server:
         self._keep_running = False
         self._server_socket.close()
         logging.info("action: close_connection | result: success")
-        if not self._is_client_closed:
+        if not self._is_client_closed and self._current_peer is not None:
             self._is_client_closed = True
             self._current_peer.close()
             logging.info("action: close_connection | result: success")
@@ -41,8 +42,11 @@ class Server:
         # TODO: Modify this program to handle signal to graceful shutdown
         # the server
         while self._keep_running:
-            self._current_peer = self.__accept_new_connection()
-            self.__handle_client_connection()
+            try:
+                self._current_peer = self.__accept_new_connection()
+                self.__handle_client_connection()
+            except Exception as e:
+                break
 
     def __handle_client_connection(self):
         """
@@ -51,6 +55,8 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
+        if self._current_peer is None:
+            return 
 
         try:
             # TODO: Modify the receive to avoid short-reads
