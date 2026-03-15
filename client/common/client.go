@@ -46,7 +46,8 @@ func (c *Client) Shutdown() {
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config: config,
+		config:      config,
+		keepWorking: true,
 	}
 	return client
 }
