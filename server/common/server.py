@@ -1,3 +1,4 @@
+import os
 import socket
 import logging
 import signal
@@ -24,6 +25,7 @@ class Server:
         if not self._is_client_closed:
             self._is_client_closed = True
             self._current_peer.close()
+            os._exit(0)
 
     def run(self):
         """
