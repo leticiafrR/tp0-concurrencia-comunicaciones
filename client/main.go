@@ -120,6 +120,7 @@ func main() {
 		fmt.Printf("\nSeñal recibida: %v. Iniciando shutdown...\n", sig)
 		client.Shutdown()
 		fmt.Println("Shutdown completado.")
+		os.Exit(0)
 	}()
 
 	client.StartClientLoop()
