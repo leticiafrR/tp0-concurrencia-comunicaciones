@@ -21,8 +21,24 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	conn   net.Conn
+	config      ClientConfig
+	conn        net.Conn
+	keepWorking bool
+}
+
+func (c *Client) Shutdown() {
+	c.keepWorking = false //for avoiding reserve new connections when there is a shutdown signal.
+	//  This is executed by spawned goroutine so this may cause a race contidion but this is not
+	//  a problem because the worst case scenario is that one more connection is created after the
+	//  shutdown signal, but this connection will be closed inmediatly after being used and no more
+	//  connections will be created after that.
+	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
+		fmt.Printf("Gracefull shutdown: Closing connection.\n")
+		c.conn.Close()
+	} else {
+		fmt.Printf("Gracefull shutdown: No connection to close, this was already closed\n")
+	}
+
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -54,7 +70,7 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for msgID := 1; msgID <= c.config.LoopAmount && c.keepWorking; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
