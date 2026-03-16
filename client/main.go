@@ -114,13 +114,12 @@ func main() {
 
 	client := common.NewClient(clientConfig)
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM) //para testear corriendo Ctrl+C
+	signal.Notify(sigChan, syscall.SIGTERM)
 	go func() {
 		sig := <-sigChan
 		fmt.Printf("\nSeñal recibida: %v. Iniciando shutdown...\n", sig)
 		client.Shutdown()
 		fmt.Println("Shutdown completado.")
-		os.Exit(0)
 	}()
 
 	client.StartClientLoop()
