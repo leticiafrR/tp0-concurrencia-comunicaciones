@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -33,13 +36,11 @@ func (c *Client) Shutdown() {
 	//  shutdown signal, but this connection will be closed inmediatly after being used and no more
 	//  connections will be created after that.
 	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
-		fmt.Printf("Gracefull shutdown: Closing connection.\n")
 		c.conn.Close()
 		log.Info("action: close_connection | result: success")
 	} else {
-		fmt.Printf("Gracefull shutdown: No connection to close, this was already closed\n")
+		log.Info("action: closing_loop | result: in_progress")
 	}
-
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -66,6 +67,15 @@ func (c *Client) createClientSocket() error {
 	}
 	c.conn = conn
 	return nil
+}
+
+func (c *Client) SpawnSignalHandler() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		c.Shutdown()
+	}()
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
