@@ -1,12 +1,7 @@
 package common
 
 import (
-	"bufio"
-	"fmt"
 	"net"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -25,22 +20,7 @@ type ClientConfig struct {
 // Client Entity that encapsulates how
 type Client struct {
 	config      ClientConfig
-	conn        net.Conn
 	keepWorking bool
-}
-
-func (c *Client) Shutdown() {
-	c.keepWorking = false //for avoiding reserve new connections when there is a shutdown signal.
-	//  This is executed by spawned goroutine so this may cause a race contidion but this is not
-	//  a problem because the worst case scenario is that one more connection is created after the
-	//  shutdown signal, but this connection will be closed inmediatly after being used and no more
-	//  connections will be created after that.
-	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
-		c.conn.Close()
-		log.Info("action: close_connection | result: success")
-	} else {
-		log.Info("action: closing_loop | result: in_progress")
-	}
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -53,10 +33,7 @@ func NewClient(config ClientConfig) *Client {
 	return client
 }
 
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
-func (c *Client) createClientSocket() error {
+func (c *Client) createClientSocket() (net.Conn, error) {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if err != nil {
 		log.Criticalf(
@@ -65,56 +42,42 @@ func (c *Client) createClientSocket() error {
 			err,
 		)
 	}
-	c.conn = conn
-	return nil
+	return conn, nil
 }
 
-func (c *Client) SpawnSignalHandler() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		c.Shutdown()
-	}()
-}
-
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClientLoop() {
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount && c.keepWorking; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
-
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
-		if c.conn != nil {
-			c.conn.Close()
-			log.Info("action: close_connection | result: success")
-		}
-
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
-
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-
+func (c *Client) Run() {
+	conn, err := c.createClientSocket()
+	if err != nil {
+		log.Errorf("action: create_client_socket | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	protocol := NewClientProtocol(conn)
+	bet := &Bet{
+		Name:     "John",
+		LastName: "Doe",
+		Document: uint32(12345678),
+		Year:     uint16(1990),
+		Month:    uint8(1),
+		Day:      uint8(1),
+		Number:   uint16(1000),
+	}
+	err = protocol.SendMessage(bet)
+	if err != nil {
+		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | error: %v",
+			bet.Document,
+			err,
+		)
+		return
+	}
+	isConfirmed, err := protocol.ReceiveConfirmation()
+	if err != nil || !isConfirmed {
+		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | error: %v",
+			bet.Document,
+			err,
+		)
+		return
+	}
+	log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", bet.Document, bet.Number)
+
+	protocol.Shutdown()
 }
