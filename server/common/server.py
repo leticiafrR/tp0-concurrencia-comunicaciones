@@ -3,30 +3,30 @@ import socket
 import logging
 import signal
 import sys
+from server_protocol import ServerProtocol
+from typing import Optional
+from utils import store_bets
 
 
 class Server:
-    def __register_signal_handlers(self):
-        signal.signal(signal.SIGTERM, self.shutdown)
-        signal.signal(signal.SIGINT, self.shutdown)
-
     def __init__(self, port, listen_backlog):
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        from typing import Optional
-        self._current_peer: Optional[socket.socket] = None
-        self._is_client_closed = False
+        self.protocol: Optional[ServerProtocol] = None
         self._keep_running = True
         self.__register_signal_handlers()
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGTERM, self.shutdown)
+        signal.signal(signal.SIGINT, self.shutdown)
 
     def shutdown(self, signum, frame):
         self._keep_running = False
         self._server_socket.close()
         logging.info("action: close_connection | result: success")
-        if not self._is_client_closed and self._current_peer is not None:
-            self._is_client_closed = True
-            self._current_peer.close()
+        if self.protocol is not None:
+            self.protocol.shutdown()
             logging.info("action: close_connection | result: success")
         os._exit(0)
 
@@ -35,15 +35,13 @@ class Server:
         Dummy Server loop
 
         Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
+        communication with a client. After client with communication
         finishes, servers starts to accept new connections again
         """
-
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while self._keep_running:
             try:
-                self._current_peer = self.__accept_new_connection()
+                peer = self.__accept_new_connection()
+                self.protocol = ServerProtocol(peer)
                 self.__handle_client_connection()
             except Exception as e:
                 break
@@ -55,23 +53,19 @@ class Server:
         If a problem arises in the communication with the client, the
         client socket will also be closed
         """
-        if self._current_peer is None:
+        if self.protocol is None:
             return 
 
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = self._current_peer.recv(1024).rstrip().decode('utf-8')
-            addr = self._current_peer.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            self._current_peer.send("{}\n".format(msg).encode('utf-8'))#aqui se puede ejecutar el handler
+            bet = self.protocol.receiveBet()
+            store_bets([bet])
+            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+            self.protocol.sendConfirmation(True)
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
-            if not self._is_client_closed:
-                self._is_client_closed = True
-                self._current_peer.close()
-                logging.info("action: close_connection | result: success")
+            self.protocol.shutdown()
+
 
     def __accept_new_connection(self):
         """
