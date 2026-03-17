@@ -1,6 +1,6 @@
-from serializer import deserializeInt, deserializeString, serializeBool
+from .serializer import deserializeInt, deserializeString, serializeBool
 from socket import socket
-from utils import Bet
+from .utils import Bet
 
 class ServerProtocol:
     def __init__(self, conn: socket):
