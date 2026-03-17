@@ -43,6 +43,7 @@ class Server:
                 self.protocol = ServerProtocol(peer)
                 self.__handle_client_connection()
             except Exception as e:
+                logging.error(f"action: iteration | result: fail | error: {e}")
                 break
 
     def __handle_client_connection(self):
@@ -57,6 +58,7 @@ class Server:
 
         try:
             bet = self.protocol.receiveBet()
+            logging.info(f'action: apuesta_recibida | result: success | dni: {bet.document} | numero: {bet.number} | fecha_nacimiento: {bet.birthdate}')
             store_bets([bet])
             logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
             self.protocol.sendConfirmation(True)
