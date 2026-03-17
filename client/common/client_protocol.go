@@ -1,10 +1,9 @@
 package common
 
 import (
+	"fmt"
 	"net"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 type Bet struct {
@@ -22,12 +21,7 @@ type ClientProtocol struct {
 
 func NewClientProtocol(conn net.Conn) *ClientProtocol {
 	c := &ClientProtocol{conn}
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		c.Shutdown()
-	}()
+
 	return c
 }
 
@@ -56,13 +50,17 @@ func (b *ClientProtocol) Shutdown() {
 
 func (b *ClientProtocol) sendBytes(msg []byte) error {
 	msg_size := len(msg)
+	fmt.Fprint(os.Stdout, "action: send_bytes | result: BEGGING | total_bytes_to_write: ", msg_size, "\n")
 	bytesSent := 0
 	for bytesSent < msg_size {
-		cant_read, err := b.conn.Write(msg[bytesSent:])
+		cant_wrote, err := b.conn.Write(msg[bytesSent:])
+		fmt.Fprintf(os.Stdout, "action: some_bytes_sended | result: in_progress | bytes_sent: %v | total_bytes: %v\n", bytesSent, msg_size)
+
 		if err != nil {
 			return err
 		}
-		bytesSent += cant_read
+		bytesSent += cant_wrote
+		fmt.Fprintf(os.Stdout, "action: some_bytes_sended | result: success | bytes_pending: %v \n", msg_size-bytesSent)
 	}
 	return nil
 }

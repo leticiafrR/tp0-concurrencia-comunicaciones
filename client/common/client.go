@@ -2,6 +2,9 @@ package common
 
 import (
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -21,6 +24,7 @@ type ClientConfig struct {
 type Client struct {
 	config      ClientConfig
 	keepWorking bool
+	protocol    *ClientProtocol
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -29,6 +33,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:      config,
 		keepWorking: true,
+		protocol:    nil,
 	}
 	return client
 }
@@ -45,7 +50,14 @@ func (c *Client) createClientSocket() (net.Conn, error) {
 	return conn, err
 }
 
-func (c *Client) Run() {
+func (c *Client) Stop() {
+	c.keepWorking = false
+	if c.protocol != nil {
+		c.protocol.Shutdown()
+	}
+}
+
+func (c *Client) runIteration() {
 	conn, err := c.createClientSocket()
 	if err != nil {
 		log.Errorf("action: create_client_socket | result: fail | client_id: %v | error: %v", c.config.ID, err)
@@ -80,4 +92,21 @@ func (c *Client) Run() {
 	log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", bet.Document, bet.Number)
 
 	protocol.Shutdown()
+}
+
+func (c *Client) RegisterSignalHandler() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		c.Stop()
+	}()
+}
+
+func (c *Client) Run() {
+	c.RegisterSignalHandler()
+	for i := 0; i < c.config.LoopAmount && c.keepWorking; i++ {
+		c.runIteration()
+		time.Sleep(c.config.LoopPeriod)
+	}
 }
