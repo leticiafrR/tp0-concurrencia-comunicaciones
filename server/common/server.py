@@ -58,7 +58,6 @@ class Server:
 
         try:
             bet = self.protocol.receiveBet()
-            logging.info(f'action: apuesta_recibida | result: success | dni: {bet.document} | numero: {bet.number} | fecha_nacimiento: {bet.birthdate}')
             store_bets([bet])
             logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
             self.protocol.sendConfirmation(True)

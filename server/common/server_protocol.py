@@ -1,7 +1,6 @@
 from .serializer import deserializeInt, deserializeString, serializeBool
 from socket import socket
 from .utils import Bet
-import logging
 
 class ServerProtocol:
     def __init__(self, conn: socket):
@@ -10,16 +9,11 @@ class ServerProtocol:
 
     def receiveBet(self) -> Bet:
         first_name=self.__receiveString()
-        logging.info(f'action: receiveBet | first_name {first_name}')
         last_name=self.__receiveString()
-        logging.info(f'action: receiveBet | last_name {last_name}')
         document=str(self.__receiveInt(4))
         year  = self.__receiveInt(2)
-        logging.info(f'action: receiveBet | year {year}')
         month = self.__receiveInt(1)
-        logging.info(f'action: receiveBet | month {month}')
         day   = self.__receiveInt(1)
-        logging.info(f'action: receiveBet | day {day}')
         birthdate = f"{year:04d}-{month:02d}-{day:02d}"  # formato YYYY-MM-DD
         number=str(self.__receiveInt(2))
         return Bet(
