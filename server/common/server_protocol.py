@@ -8,13 +8,18 @@ class ServerProtocol:
         self.__is_client_closed = False
 
     def receiveBet(self) -> Bet:
-        return Bet( agency="2",
+        year  = self.__receiveInt(2)
+        month = self.__receiveInt(1)
+        day   = self.__receiveInt(1)
+        birthdate = f"{year:04d}-{month:02d}-{day:02d}"  # formato YYYY-MM-DD
+        return Bet(
+            agency="2",
             first_name=self.__receiveString(),
-                    last_name=self.__receiveString(),
-                    document=str(self.__receiveInt(4)),
-                    birthdate=str(self.__receiveInt(2))+'-'+str(self.__receiveInt(1))+'-'+str(self.__receiveInt(1)),
-                    number=str(self.__receiveInt(2))
-            )
+            last_name=self.__receiveString(),
+            document=str(self.__receiveInt(4)),
+            birthdate=birthdate,
+            number=str(self.__receiveInt(2))
+        )
 
     def sendConfirmation(self, flag: bool):
         f = serializeBool(flag)
@@ -32,7 +37,7 @@ class ServerProtocol:
         totalRead = 0
 
         while totalRead < nBytes:
-            seq = self.__peer.recv(nBytes)
+            seq = self.__peer.recv(nBytes - totalRead)
             totalRead += len(seq)
         return bytes(buf)
     

@@ -42,7 +42,7 @@ func (c *Client) createClientSocket() (net.Conn, error) {
 			err,
 		)
 	}
-	return conn, nil
+	return conn, err
 }
 
 func (c *Client) Run() {
