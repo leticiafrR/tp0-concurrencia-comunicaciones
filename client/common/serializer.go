@@ -2,8 +2,6 @@ package common
 
 import (
 	"encoding/binary"
-	"fmt"
-	"os"
 )
 
 func serializeString(str string, msg []byte) []byte {
@@ -29,7 +27,6 @@ func serializeUint32(num uint32, buf []byte) []byte {
 
 func reserveBuffer(bet *Bet) []byte {
 	estimatedSize := len(bet.Name) + len(bet.LastName) + 14
-	fmt.Fprintf(os.Stdout, "action: reserve_buffer | result: success | estimated_size: %v\n", estimatedSize)
 	return make([]byte, 0, estimatedSize)
 }
 

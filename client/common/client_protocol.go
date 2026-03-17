@@ -1,9 +1,7 @@
 package common
 
 import (
-	"fmt"
 	"net"
-	"os"
 )
 
 type Bet struct {
@@ -50,17 +48,13 @@ func (b *ClientProtocol) Shutdown() {
 
 func (b *ClientProtocol) sendBytes(msg []byte) error {
 	msg_size := len(msg)
-	fmt.Fprint(os.Stdout, "action: send_bytes | result: BEGGING | total_bytes_to_write: ", msg_size, "\n")
 	bytesSent := 0
 	for bytesSent < msg_size {
 		cant_wrote, err := b.conn.Write(msg[bytesSent:])
-		fmt.Fprintf(os.Stdout, "action: some_bytes_sended | result: in_progress | bytes_sent: %v | total_bytes: %v\n", bytesSent, msg_size)
-
 		if err != nil {
 			return err
 		}
 		bytesSent += cant_wrote
-		fmt.Fprintf(os.Stdout, "action: some_bytes_sended | result: success | bytes_pending: %v \n", msg_size-bytesSent)
 	}
 	return nil
 }
