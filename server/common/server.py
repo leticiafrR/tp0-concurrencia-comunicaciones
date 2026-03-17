@@ -3,7 +3,7 @@ import socket
 import logging
 import signal
 import sys
-from server_protocol import ServerProtocol
+from .server_protocol import ServerProtocol
 from typing import Optional
 from utils import store_bets
 
