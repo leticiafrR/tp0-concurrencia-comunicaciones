@@ -31,6 +31,20 @@ func NewClientProtocol(conn net.Conn) *ClientProtocol {
 	return c
 }
 
+func (b *ClientProtocol) SendMessage(bet *Bet) error {
+	seq := Serialize(bet)
+	return b.sendBytes(seq)
+}
+
+func (b *ClientProtocol) ReceiveConfirmation() (bool, error) {
+	buf := make([]byte, 1)
+	err := b.receiveBytes(buf)
+	if err != nil {
+		return false, err
+	}
+	return buf[0] == 1, nil
+}
+
 func (b *ClientProtocol) Shutdown() {
 	if b.conn != nil {
 		b.conn.Close()
@@ -63,18 +77,4 @@ func (b *ClientProtocol) receiveBytes(buf []byte) error {
 		totalRead += n
 	}
 	return nil
-}
-
-func (b *ClientProtocol) SendMessage(bet *Bet) error {
-	seq := Serialize(bet)
-	return b.sendBytes(seq)
-}
-
-func (b *ClientProtocol) ReceiveConfirmation() (bool, error) {
-	buf := make([]byte, 1)
-	err := b.receiveBytes(buf)
-	if err != nil {
-		return false, err
-	}
-	return buf[0] == 1, nil
 }
