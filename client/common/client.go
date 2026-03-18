@@ -22,18 +22,18 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config      ClientConfig
-	keepWorking bool
-	protocol    *ClientProtocol
+	config       ClientConfig
+	shutdownChan chan struct{}
+	protocol     *ClientProtocol
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:      config,
-		keepWorking: true,
-		protocol:    nil,
+		config:       config,
+		shutdownChan: make(chan struct{}),
+		protocol:     nil,
 	}
 	return client
 }
@@ -51,7 +51,7 @@ func (c *Client) createClientSocket() (net.Conn, error) {
 }
 
 func (c *Client) Stop() {
-	c.keepWorking = false
+	close(c.shutdownChan)
 	if c.protocol != nil {
 		c.protocol.Shutdown()
 	}
@@ -105,7 +105,14 @@ func (c *Client) RegisterSignalHandler() {
 
 func (c *Client) Run() {
 	c.RegisterSignalHandler()
-	for i := 0; i < c.config.LoopAmount && c.keepWorking; i++ {
+	for i := 0; i < c.config.LoopAmount; i++ {
+		// Verificar si se ha recibido una señal de cierre
+		select {
+		case <-c.shutdownChan:
+			log.Infof("action: loop_interrupted | result: success | client_id: %v", c.config.ID)
+			return
+		default:
+		}
 		c.runIteration()
 		time.Sleep(c.config.LoopPeriod)
 	}
