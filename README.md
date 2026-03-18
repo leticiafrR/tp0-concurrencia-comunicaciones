@@ -5,6 +5,7 @@
 >### Ejercicio 1
 >Se definió un script de bash `generar-compose.sh` que, tal como el ejemplo provisto en la consigna, funciona como caller a un script en python que se encarga de generar el compose con la cantidad de clientes indicada.
 >### Ejercicio 2
+>Para permitir que los cambios en el archivo de configuraciones impacten en los containers de Dockers con solo reiniciarlos sin necesidad de reconstruir las imágenes, se empleó docker volumes de forma que los archivos específicos de configuración (tanto en el cliente como en el servidor) no se graban en la imagen al momento de construirla, solo funcionan como puente de hacia el sistema de archivos externos a docker.
 >### Ejercicio 3
 >### Ejercicio 4
 >### Ejercicio 5
