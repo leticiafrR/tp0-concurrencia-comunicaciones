@@ -24,17 +24,15 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config      ClientConfig
-	conn        net.Conn
-	keepWorking bool
+	config       ClientConfig
+	conn         net.Conn
+	shutdownChan chan struct{}
 }
 
 func (c *Client) Shutdown() {
-	c.keepWorking = false //for avoiding reserve new connections when there is a shutdown signal.
-	//  This is executed by spawned goroutine so this may cause a race contidion but this is not
-	//  a problem because the worst case scenario is that one more connection is created after the
-	//  shutdown signal, but this connection will be closed inmediatly after being used and no more
-	//  connections will be created after that.
+	// Señalizar al loop principal que debe terminar a través del canal
+	// Esta función puede ser llamada desde la gorrutina de señales, así que es seguro cerrar el canal
+	close(c.shutdownChan)
 	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
 		c.conn.Close()
 		log.Info("action: close_connection | result: success")
@@ -47,8 +45,8 @@ func (c *Client) Shutdown() {
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:      config,
-		keepWorking: true,
+		config:       config,
+		shutdownChan: make(chan struct{}),
 	}
 	return client
 }
@@ -82,7 +80,14 @@ func (c *Client) SpawnSignalHandler() {
 func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount && c.keepWorking; msgID++ {
+	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+		// Verificar si se ha recibido una señal de cierre
+		select {
+		case <-c.shutdownChan:
+			log.Infof("action: loop_interrupted | result: success | client_id: %v", c.config.ID)
+			return
+		default:
+		}
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
