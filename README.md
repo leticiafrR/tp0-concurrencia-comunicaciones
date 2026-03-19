@@ -9,10 +9,19 @@
 >### Ejercicio 3
 >Se implementó el script `validar-echo-server.sh` para validar el correcto funcionamiento del servidor. Se empleó el comando `netcat` por medio de un container Alpine efímero qie se conecta a la red interna `tp0_testing_net` en la que se encuentra el servidor:
 >1. Se abre una conexión TCP con el server por medio de la red de docker
->2. Se manda un mensaje al server: `echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT 2>/dev/null`
+>2. Se manda un mensaje al server (`echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT 2>/dev/null`) 
 >3. Se esperan hasta 2 segundos (`-w 2`) para leer la respuesta del server. Esto se almacena en `RESULTADO` que posteriormente se emplea para compararse con el mensaje originalmente enviado.
 
 >### Ejercicio 4
+>- **Del lado del cliente <u>go</u>:**
+> Se emplea una `Goroutine` para bloquearse esperando la signal `SIGTERM` para poder cerrar el socket de la conexión actual (si la hay) y comunicar al loop principal que termine, para esto se emplea un "chequeo de cancelación" no bloqueante al inicio de cada iteración del loop que:
+>   - Si el channel está cerrado rompe el bucle
+>   - Caso contrario no se rompe la iteración
+>- **Del lado del servidor <u>python</u>**
+> Se registra el signal handler de la `SIGTERM` que se encarga de :
+>   - Cerrar el socket acceptor
+>   - Cerrar el socket peer del cliente actual (si lo hay)
+>   - Romper el loop principal cambiando la flag `_keep_running` a `False`.
 >### Ejercicio 5
 
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
