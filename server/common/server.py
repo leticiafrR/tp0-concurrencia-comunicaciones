@@ -18,7 +18,6 @@ class Server:
 
     def __register_signal_handlers(self):
         signal.signal(signal.SIGTERM, self.shutdown)
-        signal.signal(signal.SIGINT, self.shutdown)
 
     def shutdown(self, signum, frame):
         self._keep_running = False
