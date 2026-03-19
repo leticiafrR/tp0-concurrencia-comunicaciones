@@ -2,19 +2,18 @@ import os
 import socket
 import logging
 import signal
-import sys
+from typing import Optional
+
 
 
 class Server:
     def __register_signal_handlers(self):
         signal.signal(signal.SIGTERM, self.shutdown)
-        signal.signal(signal.SIGINT, self.shutdown)
 
     def __init__(self, port, listen_backlog):
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        from typing import Optional
         self._current_peer: Optional[socket.socket] = None
         self._is_client_closed = False
         self._keep_running = True
@@ -39,8 +38,6 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while self._keep_running:
             try:
                 self._current_peer = self.__accept_new_connection()

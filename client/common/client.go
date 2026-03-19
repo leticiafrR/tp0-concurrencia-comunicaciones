@@ -30,10 +30,10 @@ type Client struct {
 }
 
 func (c *Client) Shutdown() {
-	// Señalizar al loop principal que debe terminar a través del canal
-	// Esta función puede ser llamada desde la gorrutina de señales, así que es seguro cerrar el canal
+	// Signal the main loop that it should terminate through the channel
+	// This function can be called from the signaling goroutine, so it's safe to close the channel
 	close(c.shutdownChan)
-	if c.conn != nil { // for avoiding close a closed coneection after tbeing replaced with the next one
+	if c.conn != nil {
 		c.conn.Close()
 		log.Info("action: close_connection | result: success")
 	} else {
@@ -81,7 +81,6 @@ func (c *Client) StartClientLoop() {
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Verificar si se ha recibido una señal de cierre
 		select {
 		case <-c.shutdownChan:
 			log.Infof("action: loop_interrupted | result: success | client_id: %v", c.config.ID)
