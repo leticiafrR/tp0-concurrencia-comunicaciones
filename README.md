@@ -26,7 +26,28 @@
 >   - Romper el loop principal cambiando la flag `_keep_running` a `False`.
 
 >### Ejercicio 5
+>El protocolo para el presente ejercicio es simple: 
+> 1. El cliente se contacta con el servidor enviándole su apuesta:
+>     ```go
+>     type Bet struct {
+>     	Name     string
+>     	LastName string
+>     	Document uint32
+>     	Year     uint16
+>     	Month    uint8
+>     	Day      uint8
+>     	Number   uint16
+>     }
+>     ```
+> 2. El servidor recibe su apuesta, la procesa (en este caso usando `store_bet`) y responde con 1 confirmando o con 0 si hubo algún error al recibir su respuesta.
+> 
+>Además, la serialización de una apuesta se realiza de la siguiente forma:
+>- Los números (`uint16`, `uint32` o `uint8`) se encodean con BigEndian
+>- Los `strings` primero llevan dos bytes numéricos (siguiendo el mismo encoding numérico del resto del protocolo), y luego los bytes del string
+>- El booleano es un byte que puede ser o 0 (`b'\x00'`) en caso negativo o 1 (`b'\x01'`) en caso contrario.
 >
+>Para correr el cliente se requiere que el compose indique un `envfile` con los campos necesarios para crear una *Bet*. Se adjuntó un [archivo de ejemplo](.env.example) que se emplea en el [generador de composes](compose-generator.py); asi mismo se sigue empleando la configuración `amount` y `period` para variar el comportamiento del cliente (de la misma forma que en los ejercicios anteriores).
+
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).
