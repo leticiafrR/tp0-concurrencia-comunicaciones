@@ -38,6 +38,21 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("loop", "period")
 	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
+	v.BindEnv("bet.name", "NAME", "CLI_BET_NAME")
+	v.BindEnv("bet.last_name", "LAST_NAME", "LASTNAME", "LastName", "CLI_BET_LAST_NAME")
+	v.BindEnv("bet.document", "DOCUMENT", "Document", "CLI_BET_DOCUMENT")
+	v.BindEnv("bet.year", "YEAR", "Year", "CLI_BET_YEAR")
+	v.BindEnv("bet.month", "MONTH", "Month", "CLI_BET_MONTH")
+	v.BindEnv("bet.day", "DAY", "Day", "CLI_BET_DAY")
+	v.BindEnv("bet.number", "NUMBER", "Number", "CLI_BET_NUMBER")
+
+	v.SetDefault("bet.name", "John")
+	v.SetDefault("bet.last_name", "Doe")
+	v.SetDefault("bet.document", 12345678)
+	v.SetDefault("bet.year", 1990)
+	v.SetDefault("bet.month", 1)
+	v.SetDefault("bet.day", 1)
+	v.SetDefault("bet.number", 1000)
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -103,6 +118,15 @@ func main() {
 
 	// Print program config with debugging purposes
 	PrintConfig(v)
+	bet := &common.Bet{
+		Name:     v.GetString("bet.name"),
+		LastName: v.GetString("bet.last_name"),
+		Document: uint32(v.GetInt("bet.document")),
+		Year:     uint16(v.GetInt("bet.year")),
+		Month:    uint8(v.GetInt("bet.month")),
+		Day:      uint8(v.GetInt("bet.day")),
+		Number:   uint16(v.GetInt("bet.number")),
+	}
 
 	clientConfig := common.ClientConfig{
 		ServerAddress: v.GetString("server.address"),
@@ -111,7 +135,7 @@ func main() {
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
 
-	client := common.NewClient(clientConfig)
+	client := common.NewClient(clientConfig, bet)
 
 	client.Run()
 }

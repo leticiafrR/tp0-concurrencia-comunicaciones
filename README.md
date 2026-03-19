@@ -4,8 +4,10 @@
 >## Solución provista
 >### Ejercicio 1
 >Se definió un script de bash `generar-compose.sh` que, tal como el ejemplo provisto en la consigna, funciona como caller a un script en python que se encarga de generar el compose con la cantidad de clientes indicada.
+
 >### Ejercicio 2
 >Para permitir que los cambios en el archivo de configuraciones impacten en los containers de Dockers con solo reiniciarlos sin necesidad de reconstruir las imágenes, se empleó docker volumes de forma que los archivos específicos de configuración (tanto en el cliente como en el servidor) no se graban en la imagen al momento de construirla, solo funcionan como puente de hacia el sistema de archivos externos a docker.
+
 >### Ejercicio 3
 >Se implementó el script `validar-echo-server.sh` para validar el correcto funcionamiento del servidor. Se empleó el comando `netcat` por medio de un container Alpine efímero qie se conecta a la red interna `tp0_testing_net` en la que se encuentra el servidor:
 >1. Se abre una conexión TCP con el server por medio de la red de docker
@@ -22,8 +24,9 @@
 >   - Cerrar el socket acceptor
 >   - Cerrar el socket peer del cliente actual (si lo hay)
 >   - Romper el loop principal cambiando la flag `_keep_running` a `False`.
->### Ejercicio 5
 
+>### Ejercicio 5
+>
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).

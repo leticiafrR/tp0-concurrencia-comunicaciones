@@ -11,7 +11,7 @@ type Bet struct {
 	Year     uint16
 	Month    uint8
 	Day      uint8
-	Number   uint16 //maybe 32
+	Number   uint16
 }
 type ClientProtocol struct {
 	conn net.Conn

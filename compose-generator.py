@@ -47,6 +47,7 @@ def get_client_definition(client_id):
     entrypoint: /client
     environment:
       - CLI_ID={client_id}
+    env_file: .env.example
     volumes:
       - ./client/config.yaml:/config.yaml
     networks:
