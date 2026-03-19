@@ -7,6 +7,11 @@
 >### Ejercicio 2
 >Para permitir que los cambios en el archivo de configuraciones impacten en los containers de Dockers con solo reiniciarlos sin necesidad de reconstruir las imágenes, se empleó docker volumes de forma que los archivos específicos de configuración (tanto en el cliente como en el servidor) no se graban en la imagen al momento de construirla, solo funcionan como puente de hacia el sistema de archivos externos a docker.
 >### Ejercicio 3
+>Se implementó el script `validar-echo-server.sh` para validar el correcto funcionamiento del servidor. Se empleó el comando `netcat` por medio de un container Alpine efímero qie se conecta a la red interna `tp0_testing_net` en la que se encuentra el servidor:
+>1. Se abre una conexión TCP con el server por medio de la red de docker
+>2. Se manda un mensaje al server: `echo $MSG | nc -w 2 $SERVER_HOST $SERVER_PORT 2>/dev/null`
+>3. Se esperan hasta 2 segundos (`-w 2`) para leer la respuesta del server. Esto se almacena en `RESULTADO` que posteriormente se emplea para compararse con el mensaje originalmente enviado.
+
 >### Ejercicio 4
 >### Ejercicio 5
 
