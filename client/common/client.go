@@ -103,7 +103,6 @@ func (c *Client) loop(reader *csv.Reader) {
 			c.keepProcessing = false
 			break
 		}
-		printStringArray(record)
 		bet, err := NewBetFromRecord(record, log)
 
 		if err != nil {
@@ -126,11 +125,6 @@ func (c *Client) loop(reader *csv.Reader) {
 				break
 			}
 		}
-	}
-}
-func printStringArray(arr []string) {
-	for i, str := range arr {
-		log.Infof("\nIndex: %d, Value: %s", i, str)
 	}
 }
 
