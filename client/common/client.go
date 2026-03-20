@@ -103,7 +103,7 @@ func (c *Client) loop(reader *csv.Reader) {
 			c.keepProcessing = false
 			err = nil
 			log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
-			break
+			continue //ojo
 		}
 		bet, err := NewBetFromRecord(record, log)
 
