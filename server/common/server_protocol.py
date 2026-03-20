@@ -1,29 +1,41 @@
 from .serializer import deserializeInt, deserializeString, serializeBool
 from socket import socket
 from .utils import Bet
+from typing import List, Optional
+AGENCY_EXAMPLE = "1"
+U16_SIZE = 2
 
 class ServerProtocol:
     def __init__(self, conn: socket):
         self.__peer = conn
         self.__is_client_closed = False
+        self.__expected_bets_current_batch: Optional[int] = None
 
-    def receiveBet(self) -> Bet:
+    def receiveBatch(self) -> List[Bet]:
+        self.__expected_bets_current_batch = self.__receiveBatchSize()
+        bets = []
+        for _ in range(self.__expected_bets_current_batch):
+            bet = self.__receiveBet()
+            bets.append(bet)
+        return bets
+
+    def __receiveBet(self) -> Bet:
         first_name=self.__receiveString()
         last_name=self.__receiveString()
-        document=str(self.__receiveInt(4))
-        year  = self.__receiveInt(2)
-        month = self.__receiveInt(1)
-        day   = self.__receiveInt(1)
-        birthdate = f"{year:04d}-{month:02d}-{day:02d}"  # formato YYYY-MM-DD
-        number=str(self.__receiveInt(2))
+        document=self.__receiveString()
+        birthdate  = self.__receiveString()
+        number=self.__receiveString()
         return Bet(
-            agency="2",
+            agency=AGENCY_EXAMPLE,
             first_name=first_name,
             last_name=last_name,
             document=document,
             birthdate=birthdate,
             number=number
         )
+    
+    def __receiveBatchSize(self) -> int:
+        return deserializeInt(self.__receiveBytes(U16_SIZE))
 
     def sendConfirmation(self, flag: bool):
         f = serializeBool(flag)
@@ -47,11 +59,8 @@ class ServerProtocol:
         return bytes(buf)
     
     def __receiveString(self) -> str:
-        size = deserializeInt(self.__receiveBytes(2))
+        size = deserializeInt(self.__receiveBytes(U16_SIZE))
         return deserializeString(self.__receiveBytes(size))
-
-    def __receiveInt(self, cantBytes: int) -> int:
-        return deserializeInt(self.__receiveBytes(cantBytes))
 
     def __sendBytes(self, msg: bytes):
         msg_size = len(msg)

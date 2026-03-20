@@ -6,7 +6,6 @@ from .server_protocol import ServerProtocol
 from typing import Optional
 from .utils import store_bets
 
-
 class Server:
     def __init__(self, port, listen_backlog):
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -15,6 +14,7 @@ class Server:
         self.protocol: Optional[ServerProtocol] = None
         self._keep_running = True
         self.__register_signal_handlers()
+
 
     def __register_signal_handlers(self):
         signal.signal(signal.SIGTERM, self.shutdown)
@@ -29,13 +29,6 @@ class Server:
         os._exit(0)
 
     def run(self):
-        """
-        Dummy Server loop
-
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communication
-        finishes, servers starts to accept new connections again
-        """
         while self._keep_running:
             try:
                 peer = self.__accept_new_connection()
@@ -56,12 +49,13 @@ class Server:
             return 
 
         try:
-            bet = self.protocol.receiveBet()
-            store_bets([bet])
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+            bets = self.protocol.receiveBatch()
+            store_bets(bets=bets)
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             self.protocol.sendConfirmation(True)
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            self.protocol.sendConfirmation(False)
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}.")
         finally:
             self.protocol.shutdown()
 
