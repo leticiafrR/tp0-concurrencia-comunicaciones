@@ -22,11 +22,11 @@ var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
-	ID            string
-	ServerAddress string
-	LoopAmount    int
-	LoopPeriod    time.Duration
-	MaxBatchSize  int
+	ID              string
+	ServerAddress   string
+	LoopAmount      int
+	LoopPeriod      time.Duration
+	CantBetsByBatch int
 }
 
 // Client Entity that encapsulates how
@@ -49,7 +49,7 @@ func NewClient(config ClientConfig) *Client {
 		protocol:       nil,
 		sourceFile:     nil,
 		keepProcessing: true,
-		batchBuilder:   NewBatchBuilder(config.MaxBatchSize),
+		batchBuilder:   NewBatchBuilder(config.CantBetsByBatch),
 	}
 	return client
 }
@@ -116,8 +116,6 @@ func (c *Client) loop(reader *csv.Reader) {
 
 		if !c.batchBuilder.AddBet(bet) {
 			batch := c.batchBuilder.Build()
-			// log.Infof("action: send_batch | result: in_progress | batch_size: %d", len(batch))
-
 			err = c.protocol.SendBytes(batch)
 			if err != nil {
 				log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
