@@ -54,8 +54,8 @@ class Server:
             logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
             self.protocol.sendConfirmation(True)
         except OSError as e:
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)} | error: {e}")
             self.protocol.sendConfirmation(False)
-            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}.")
         finally:
             self.protocol.shutdown()
 

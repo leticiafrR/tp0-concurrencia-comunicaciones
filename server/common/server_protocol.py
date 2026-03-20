@@ -11,6 +11,10 @@ class ServerProtocol:
         self.__is_client_closed = False
         self.__expected_bets_current_batch: Optional[int] = None
 
+    def sendConfirmation(self, flag: bool):
+        f = serializeBool(flag)
+        self.__sendBytes(f)
+
     def receiveBatch(self) -> List[Bet]:
         self.__expected_bets_current_batch = self.__receiveBatchSize()
         bets = []
@@ -37,9 +41,6 @@ class ServerProtocol:
     def __receiveBatchSize(self) -> int:
         return deserializeInt(self.__receiveBytes(U16_SIZE))
 
-    def sendConfirmation(self, flag: bool):
-        f = serializeBool(flag)
-        self.__sendBytes(f)
       
     def shutdown(self)->bool:
         if not self.__is_client_closed:
