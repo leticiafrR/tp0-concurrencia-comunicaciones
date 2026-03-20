@@ -101,6 +101,8 @@ func (c *Client) loop(reader *csv.Reader) {
 		record, err := reader.Read()
 		if err == io.EOF {
 			c.keepProcessing = false
+			err = nil
+			log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
 			break
 		}
 		bet, err := NewBetFromRecord(record, log)
@@ -120,7 +122,7 @@ func (c *Client) loop(reader *csv.Reader) {
 			c.batchBuilder.Reset()
 			c.batchBuilder.AddBet(bet)
 			codeError, err := c.protocol.ReceiveConfirmation()
-			if err != nil || !codeError {
+			if (err != nil && err != io.EOF) || !codeError {
 				log.Errorf("action: receive_confirmation | result: fail | client_id: %v | error: %v", c.config.ID, err)
 				break
 			}
