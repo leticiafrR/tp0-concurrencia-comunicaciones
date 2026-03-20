@@ -1,13 +1,21 @@
 package common
 
 import (
+	"encoding/csv"
+	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
+)
+
+const (
+	DATA_PATH = ".data/agency-%d.csv"
 )
 
 var log = logging.MustGetLogger("log")
@@ -18,26 +26,115 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	MaxBatchSize  int
 }
 
 // Client Entity that encapsulates how
 type Client struct {
-	config       ClientConfig
-	bet          *Bet
-	shutdownChan chan struct{}
-	protocol     *ClientProtocol
+	config         ClientConfig
+	bet            *Bet
+	shutdownChan   chan struct{}
+	protocol       *ClientProtocol
+	sourceFile     *os.File
+	keepProcessing bool
+	batchBuilder   *BatchBuilder
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig, bet *Bet) *Client {
+func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config:       config,
-		bet:          bet,
-		shutdownChan: make(chan struct{}),
-		protocol:     nil,
+		config:         config,
+		shutdownChan:   make(chan struct{}),
+		protocol:       nil,
+		sourceFile:     nil,
+		keepProcessing: true,
+		batchBuilder:   NewBatchBuilder(config.MaxBatchSize),
 	}
 	return client
+}
+
+func (c *Client) reserveResources() error {
+	agency_id, _ := strconv.Atoi(c.config.ID)
+	f, err := os.Open(fmt.Sprintf(DATA_PATH, agency_id))
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	c.sourceFile = f
+
+	conn, err := c.createClientSocket()
+	if err != nil {
+		log.Errorf("action: create_client_socket | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return err
+	}
+	c.protocol = NewClientProtocol(conn)
+	return nil
+}
+
+func (c *Client) releaseResources() error {
+	if c.sourceFile != nil {
+		c.sourceFile.Close()
+		c.sourceFile = nil
+	}
+
+	if c.protocol != nil {
+		c.protocol.Shutdown()
+	}
+	return nil
+}
+
+func (c *Client) Run() {
+	if err := c.reserveResources(); err != nil {
+		log.Errorf("action: reserve_resources | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.releaseResources()
+		return
+	}
+	c.registerSignalHandler()
+	reader := csv.NewReader(c.sourceFile)
+	c.loop(reader)
+	c.releaseResources()
+}
+
+func (c *Client) loop(reader *csv.Reader) {
+	for c.keepProcessing {
+		record, err := reader.Read()
+		if err == io.EOF {
+			c.keepProcessing = false
+			break
+		}
+
+		bet, err := NewBetFromRecord(record)
+		if err != nil {
+			log.Errorf("action: invalid_record | result: fail | client_id: %v | record: %v", c.config.ID, record)
+			break
+		}
+
+		if !c.batchBuilder.AddBet(bet) {
+			batch := c.batchBuilder.Build()
+			err = c.protocol.SendBytes(batch)
+			if err != nil {
+				log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
+				break
+			}
+			c.batchBuilder.Reset()
+			c.batchBuilder.AddBet(bet)
+			codeError, err := c.protocol.ReceiveConfirmation()
+			if err != nil || !codeError {
+				log.Errorf("action: receive_confirmation | result: fail | client_id: %v | error: %v", c.config.ID, err)
+				break
+			}
+		}
+	}
+}
+
+func (c *Client) registerSignalHandler() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		c.Stop()
+	}()
 }
 
 func (c *Client) createClientSocket() (net.Conn, error) {
@@ -54,58 +151,6 @@ func (c *Client) createClientSocket() (net.Conn, error) {
 
 func (c *Client) Stop() {
 	close(c.shutdownChan)
-	if c.protocol != nil {
-		c.protocol.Shutdown()
-	}
-}
-
-func (c *Client) runIteration() {
-	conn, err := c.createClientSocket()
-	if err != nil {
-		log.Errorf("action: create_client_socket | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		return
-	}
-	protocol := NewClientProtocol(conn)
-	err = protocol.SendMessage(c.bet)
-	if err != nil {
-		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | error: %v",
-			c.bet.Document,
-			err,
-		)
-		return
-	}
-	isConfirmed, err := protocol.ReceiveConfirmation()
-	if err != nil || !isConfirmed {
-		log.Errorf("action: apuesta_enviada | result: fail | dni: %v | error: %v",
-			c.bet.Document,
-			err,
-		)
-		return
-	}
-	log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", c.bet.Document, c.bet.Number)
-
-	protocol.Shutdown()
-}
-
-func (c *Client) RegisterSignalHandler() {
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM)
-	go func() {
-		<-sigChan
-		c.Stop()
-	}()
-}
-
-func (c *Client) Run() {
-	c.RegisterSignalHandler()
-	for i := 0; i < c.config.LoopAmount; i++ {
-		select {
-		case <-c.shutdownChan:
-			log.Infof("action: loop_interrupted | result: success | client_id: %v", c.config.ID)
-			return
-		default:
-		}
-		c.runIteration()
-		time.Sleep(c.config.LoopPeriod)
-	}
+	c.releaseResources()
+	log.Infof("action: shutdown | result: success | client_id: %v", c.config.ID)
 }
