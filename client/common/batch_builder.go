@@ -15,6 +15,7 @@ func NewBatchBuilder(maxBatchSize int) *BatchBuilder {
 
 func (b *BatchBuilder) AddBet(bet *Bet) bool {
 	if !b.canAddBet(bet.Len()) {
+		// fmt.Printf("\n\n\n total de bets: %d | cantidad de bytes: %d | cantidad maxima: %d", b.cantBets, len(b.batchBuffer), b.maxBatchSize)
 		return false
 	}
 	b.batchBuffer = SerializeOneBet(b.batchBuffer, bet)

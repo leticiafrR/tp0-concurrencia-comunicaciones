@@ -5,6 +5,9 @@ from typing import List, Optional
 AGENCY_EXAMPLE = "1"
 U16_SIZE = 2
 
+class ClientDisconnectedException(Exception):
+    pass
+
 class ServerProtocol:
     def __init__(self, conn: socket):
         self.__peer = conn
@@ -55,6 +58,8 @@ class ServerProtocol:
 
         while totalRead < nBytes:
             seq = self.__peer.recv(nBytes - totalRead)
+            if len(seq) == 0:
+                raise ClientDisconnectedException("client closed connection")
             buf[totalRead:totalRead + len(seq)] = seq
             totalRead += len(seq)
         return bytes(buf)

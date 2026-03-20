@@ -2,7 +2,7 @@ import os
 import socket
 import logging
 import signal
-from .server_protocol import ServerProtocol
+from .server_protocol import ClientDisconnectedException, ServerProtocol
 from typing import Optional
 from .utils import store_bets
 
@@ -49,16 +49,30 @@ class Server:
             return 
 
         try:
-            bets = self.protocol.receiveBatch()
-            store_bets(bets=bets)
-            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-            self.protocol.sendConfirmation(True)
+            self.__client_loop(self.protocol)
         except OSError as e:
-            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)} | error: {e}")
-            self.protocol.sendConfirmation(False)
+            logging.error(f"action: apuesta_recibida | result: fail  | error: {e}")
+            self.__send_code_error(self.protocol)
         finally:
             self.protocol.shutdown()
 
+
+    def __send_code_error(self, protocol: ServerProtocol):
+        try:
+            protocol.sendConfirmation(False)
+        except Exception as e:
+            logging.error(f"action: send_confirmation | result: fail | error: {e}")
+
+
+    def __client_loop(self, protocol: ServerProtocol):
+        while True:
+            try:
+                bets = protocol.receiveBatch()
+            except ClientDisconnectedException:
+                break
+            store_bets(bets)
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+            protocol.sendConfirmation(True)
 
     def __accept_new_connection(self):
         """
