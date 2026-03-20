@@ -50,3 +50,6 @@ func (b *BatchBuilder) Reset() {
 	b.batchBuffer = reserveBatchBuffer(b.maxBytesByBatch)
 	b.cantBets = 0
 }
+func (b *BatchBuilder) IsEmpty() bool {
+	return b.cantBets == 0
+}

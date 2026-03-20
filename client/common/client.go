@@ -103,8 +103,9 @@ func (c *Client) loop(reader *csv.Reader) {
 
 		if err == io.EOF {
 			c.keepProcessing = false
-			err = nil
-			// log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
+			if !c.batchBuilder.IsEmpty() {
+				c.sendBatch()
+			}
 			continue //ojo
 		}
 		bet, err := NewBetFromRecord(record, log)
@@ -115,22 +116,30 @@ func (c *Client) loop(reader *csv.Reader) {
 		}
 
 		if !c.batchBuilder.AddBet(bet) {
-			batch := c.batchBuilder.Build()
-			err = c.protocol.SendBytes(batch)
-			if err != nil {
-				log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
+			if c.sendBatch() != nil {
 				break
 			}
-			log.Infof("action: send_batch | result: success | client_id: %v", c.config.ID)
 			c.batchBuilder.Reset()
 			c.batchBuilder.AddBet(bet)
-			codeError, err := c.protocol.ReceiveConfirmation()
-			if (err != nil && err != io.EOF) || !codeError {
-				log.Errorf("action: receive_confirmation | result: fail | client_id: %v | confirmation: %v | error: %v", c.config.ID, codeError, err)
-				break
-			}
+
 		}
 	}
+}
+
+func (c *Client) sendBatch() error {
+	batch := c.batchBuilder.Build()
+	err := c.protocol.SendBytes(batch)
+	if err != nil {
+		log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		return err
+	}
+	log.Infof("action: send_batch | result: success | client_id: %v", c.config.ID)
+	codeError, err := c.protocol.ReceiveConfirmation()
+	if (err != nil && err != io.EOF) || !codeError {
+		log.Errorf("action: receive_confirmation | result: fail | client_id: %v | confirmation: %v | error: %v", c.config.ID, codeError, err)
+
+	}
+	return err
 }
 
 func (c *Client) registerSignalHandler() {
