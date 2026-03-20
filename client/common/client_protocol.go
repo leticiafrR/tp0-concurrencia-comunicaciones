@@ -27,8 +27,6 @@ func (b *ClientProtocol) Shutdown() {
 	if b.conn != nil {
 		b.conn.Close()
 		log.Info("action: close_connection | result: success")
-	} else {
-		log.Info("action: closing_loop | result: in_progress")
 	}
 }
 

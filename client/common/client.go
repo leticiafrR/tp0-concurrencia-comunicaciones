@@ -116,7 +116,7 @@ func (c *Client) loop(reader *csv.Reader) {
 
 		if !c.batchBuilder.AddBet(bet) {
 			batch := c.batchBuilder.Build()
-			log.Infof("action: send_batch | result: in_progress | batch_size: %d", len(batch))
+			// log.Infof("action: send_batch | result: in_progress | batch_size: %d", len(batch))
 
 			err = c.protocol.SendBytes(batch)
 			if err != nil {
