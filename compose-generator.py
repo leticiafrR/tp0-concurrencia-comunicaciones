@@ -50,6 +50,7 @@ def get_client_definition(client_id):
     env_file: .env.example
     volumes:
       - ./client/config.yaml:/config.yaml
+      - ./.data/agency-{client_id}.csv:/.data/agency-{client_id}.csv
     networks:
       - testing_net
     depends_on:

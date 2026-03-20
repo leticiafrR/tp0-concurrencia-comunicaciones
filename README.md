@@ -43,7 +43,7 @@
 > 
 >Además, la serialización de una apuesta se realiza de la siguiente forma:
 >- Los números (`uint16`, `uint32` o `uint8`) se encodean con BigEndian
->- Los `strings` primero llevan dos bytes numéricos (siguiendo el mismo encoding numérico del resto del protocolo), y luego los bytes del string
+>- Los `strings` primero llevan dos bytes numéricos (siguiendo el mismo encoding numérico del resto del protocolo), y luego los bytes del string con encoding UTF-8.
 >- El booleano es un byte que puede ser o 0 (`b'\x00'`) en caso negativo o 1 (`b'\x01'`) en caso contrario.
 >
 >Para correr el cliente se requiere que el compose indique un `envfile` con los campos necesarios para crear una *Bet*. Se adjuntó un [archivo de ejemplo](.env.example) que se emplea en el [generador de composes](compose-generator.py); asi mismo se sigue empleando la configuración `amount` y `period` para variar el comportamiento del cliente (de la misma forma que en los ejercicios anteriores).
