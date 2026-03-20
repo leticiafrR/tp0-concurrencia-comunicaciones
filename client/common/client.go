@@ -103,8 +103,9 @@ func (c *Client) loop(reader *csv.Reader) {
 			c.keepProcessing = false
 			break
 		}
+		printStringArray(record)
+		bet, err := NewBetFromRecord(record, log)
 
-		bet, err := NewBetFromRecord(record)
 		if err != nil {
 			log.Errorf("action: invalid_record | result: fail | client_id: %v | record: %v", c.config.ID, record)
 			break
@@ -125,6 +126,11 @@ func (c *Client) loop(reader *csv.Reader) {
 				break
 			}
 		}
+	}
+}
+func printStringArray(arr []string) {
+	for i, str := range arr {
+		log.Infof("\nIndex: %d, Value: %s", i, str)
 	}
 }
 
