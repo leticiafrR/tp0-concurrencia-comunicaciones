@@ -123,7 +123,7 @@ func (c *Client) loop(reader *csv.Reader) {
 			c.batchBuilder.AddBet(bet)
 			codeError, err := c.protocol.ReceiveConfirmation()
 			if (err != nil && err != io.EOF) || !codeError {
-				log.Errorf("action: receive_confirmation | result: fail | client_id: %v | error: %v", c.config.ID, err)
+				log.Errorf("action: receive_confirmation | result: fail | client_id: %v | confirmation: %v | error: %v", c.config.ID, codeError, err)
 				break
 			}
 		}
