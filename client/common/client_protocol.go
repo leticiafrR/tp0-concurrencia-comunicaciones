@@ -4,15 +4,6 @@ import (
 	"net"
 )
 
-type Bet struct {
-	Name     string
-	LastName string
-	Document uint32
-	Year     uint16
-	Month    uint8
-	Day      uint8
-	Number   uint16
-}
 type ClientProtocol struct {
 	conn net.Conn
 }
@@ -21,11 +12,6 @@ func NewClientProtocol(conn net.Conn) *ClientProtocol {
 	c := &ClientProtocol{conn}
 
 	return c
-}
-
-func (b *ClientProtocol) SendMessage(bet *Bet) error {
-	seq := Serialize(bet)
-	return b.sendBytes(seq)
 }
 
 func (b *ClientProtocol) ReceiveConfirmation() (bool, error) {
@@ -46,7 +32,7 @@ func (b *ClientProtocol) Shutdown() {
 	}
 }
 
-func (b *ClientProtocol) sendBytes(msg []byte) error {
+func (b *ClientProtocol) SendBytes(msg []byte) error {
 	msg_size := len(msg)
 	bytesSent := 0
 	for bytesSent < msg_size {
