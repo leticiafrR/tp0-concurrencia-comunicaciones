@@ -55,7 +55,6 @@ func NewBetFromRecord(record []string, log *logging.Logger) (*Bet, error) {
 		Date:     record[DATE_IDX],
 		Number:   record[NUMBER_IDX],
 	}
-	log.Infof("action: parse_record | result: success | bet: %v", bet)
 	return bet, nil
 }
 
