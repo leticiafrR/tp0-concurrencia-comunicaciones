@@ -1,7 +1,5 @@
 package common
 
-import "fmt"
-
 type BatchBuilder struct {
 	batchBuffer  []byte
 	maxBatchSize int
@@ -18,12 +16,12 @@ func NewBatchBuilder(maxBatchSize int) *BatchBuilder {
 func (b *BatchBuilder) AddBet(bet *Bet) bool {
 	if !b.canAddBet(bet.Len()) {
 		// fmt.Printf("\n\n\n total de bets: %d | cantidad de bytes: %d | cantidad maxima: %d", b.cantBets, len(b.batchBuffer), b.maxBatchSize)
-		fmt.Printf("action: add_bet_to_batch | result: fail | max_size_batch : %d |batch_size: %d |bet: %v | cant_bytes_bets: %d", b.maxBatchSize, b.cantBets, bet, len(b.batchBuffer)-2)
+		// fmt.Printf("action: add_bet_to_batch | result: fail | max_size_batch : %d |batch_size: %d |bet: %v | cant_bytes_bets: %d", b.maxBatchSize, b.cantBets, bet, len(b.batchBuffer)-2)
 		return false
 	}
 	b.batchBuffer = SerializeOneBet(b.batchBuffer, bet)
 	b.cantBets++
-	fmt.Printf("action: add_bet_to_batch | result: success | bet: %v | batch_size: %d |  cant_bytes_bets: %d", bet, b.cantBets, len(b.batchBuffer)-2)
+	// fmt.Printf("action: add_bet_to_batch | result: success | bet: %v | batch_size: %d |  cant_bytes_bets: %d", bet, b.cantBets, len(b.batchBuffer)-2)
 	return true
 }
 

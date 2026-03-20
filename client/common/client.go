@@ -99,12 +99,12 @@ func (c *Client) Run() {
 func (c *Client) loop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
-		log.Infof("action: read_record | result: success | client_id: %v | record: %v", c.config.ID, record)
+		// log.Infof("action: read_record | result: success | client_id: %v", c.config.ID)
 
 		if err == io.EOF {
 			c.keepProcessing = false
 			err = nil
-			log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
+			// log.Infof("action: end_of_file | result: success | client_id: %v", c.config.ID)
 			continue //ojo
 		}
 		bet, err := NewBetFromRecord(record, log)
