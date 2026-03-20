@@ -99,6 +99,8 @@ func (c *Client) Run() {
 func (c *Client) loop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
+		log.Infof("action: read_record | result: success | client_id: %v | record: %v", c.config.ID, record)
+
 		if err == io.EOF {
 			c.keepProcessing = false
 			err = nil
@@ -114,11 +116,14 @@ func (c *Client) loop(reader *csv.Reader) {
 
 		if !c.batchBuilder.AddBet(bet) {
 			batch := c.batchBuilder.Build()
+			log.Infof("action: send_batch | result: in_progress | batch_size: %d", len(batch))
+
 			err = c.protocol.SendBytes(batch)
 			if err != nil {
 				log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
 				break
 			}
+			log.Infof("action: send_batch | result: success | client_id: %v", c.config.ID)
 			c.batchBuilder.Reset()
 			c.batchBuilder.AddBet(bet)
 			codeError, err := c.protocol.ReceiveConfirmation()

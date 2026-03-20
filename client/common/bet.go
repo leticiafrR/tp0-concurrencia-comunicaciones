@@ -48,13 +48,15 @@ func NewBetFromRecord(record []string, log *logging.Logger) (*Bet, error) {
 		return nil, fmt.Errorf("invalid number %q: must be a positive number greater than zero", record[NUMBER_IDX])
 	}
 
-	return &Bet{
+	bet := &Bet{
 		Name:     record[NAME_IDX],
 		LastName: record[LASTNAME_IDX],
 		Document: record[DOCUMENT_IDX],
 		Date:     record[DATE_IDX],
 		Number:   record[NUMBER_IDX],
-	}, nil
+	}
+	log.Infof("action: parse_record | result: success | bet: %v", bet)
+	return bet, nil
 }
 
 func (b Bet) Len() int {
