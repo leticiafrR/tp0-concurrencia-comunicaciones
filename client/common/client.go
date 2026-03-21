@@ -104,7 +104,7 @@ func (c *Client) loop(reader *csv.Reader) {
 		if err == io.EOF {
 			c.keepProcessing = false
 			if !c.batchBuilder.IsEmpty() {
-				c.sendBatch()
+				c.sendBatchAndConfirm()
 			}
 			continue //ojo
 		}
@@ -116,7 +116,7 @@ func (c *Client) loop(reader *csv.Reader) {
 		}
 
 		if !c.batchBuilder.AddBet(bet) {
-			if c.sendBatch() != nil {
+			if c.sendBatchAndConfirm() != nil {
 				break
 			}
 			c.batchBuilder.Reset()
@@ -126,7 +126,7 @@ func (c *Client) loop(reader *csv.Reader) {
 	}
 }
 
-func (c *Client) sendBatch() error {
+func (c *Client) sendBatchAndConfirm() error {
 	batch := c.batchBuilder.Build()
 	err := c.protocol.SendBytes(batch)
 	if err != nil {

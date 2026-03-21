@@ -1,7 +1,5 @@
 package common
 
-import "fmt"
-
 const (
 	MAX_BATCH_BYTES = 8000
 )
@@ -34,7 +32,6 @@ func (b *BatchBuilder) Build() []byte {
 	bytesSizeTmp = SerializeUint16(uint16(b.cantBets), bytesSizeTmp)
 	b.batchBuffer[0] = bytesSizeTmp[0]
 	b.batchBuffer[1] = bytesSizeTmp[1]
-	fmt.Printf("THE TOTAL BATCH SIZE IN BETS IS WHILE BUILDING: %d\n", b.cantBets)
 	return b.batchBuffer
 }
 

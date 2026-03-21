@@ -20,9 +20,9 @@ const (
 type Bet struct {
 	Name     string
 	LastName string
-	Document string //uint32
-	Date     string //uint16
-	Number   string //uint16
+	Document string
+	Date     string
+	Number   string
 }
 
 func NewBetFromRecord(record []string, log *logging.Logger) (*Bet, error) {
