@@ -30,3 +30,7 @@ func serializeString(str string, msg []byte) []byte {
 	msg = append(msg, []byte(str)...)
 	return msg
 }
+
+func deserializeUint16(msg []byte) uint16 {
+	return binary.BigEndian.Uint16(msg)
+}
