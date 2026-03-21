@@ -37,7 +37,7 @@ type Client struct {
 	protocol       *ClientProtocol
 	sourceFile     *os.File
 	keepProcessing bool
-	batchBuilder   *BatchBuilder
+	batchBuilder   *BatchSerializer
 }
 
 // NewClient Initializes a new client receiving the configuration
@@ -49,9 +49,31 @@ func NewClient(config ClientConfig) *Client {
 		protocol:       nil,
 		sourceFile:     nil,
 		keepProcessing: true,
-		batchBuilder:   NewBatchBuilder(config.CantBetsByBatch),
+		batchBuilder:   NewBatchSerializer(config.CantBetsByBatch),
 	}
 	return client
+}
+
+func (c *Client) Run() {
+	if err := c.reserveResources(); err != nil {
+		log.Errorf("action: reserve_resources | result: fail | client_id: %v | error: %v", c.config.ID, err)
+		c.releaseResources()
+		return
+	}
+	c.registerSignalHandler()
+	reader := csv.NewReader(c.sourceFile)
+	c.protocol.MeetClient()
+	c.betsTransmissionLoop(reader)
+	c.consultWinners()
+	c.releaseResources()
+}
+
+func (c *Client) consultWinners() {
+	winners, err := c.protocol.ReceiveWinners()
+	if err != nil {
+		log.Errorf("action: consulta_ganadores | result: fail | client_id: %v | error: %v", c.config.ID, err)
+	}
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %v ", len(winners))
 }
 
 func (c *Client) reserveResources() error {
@@ -84,26 +106,13 @@ func (c *Client) releaseResources() error {
 	return nil
 }
 
-func (c *Client) Run() {
-	if err := c.reserveResources(); err != nil {
-		log.Errorf("action: reserve_resources | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		c.releaseResources()
-		return
-	}
-	c.registerSignalHandler()
-	reader := csv.NewReader(c.sourceFile)
-	c.protocol.MeetClient()
-	c.clientLoop(reader)
-	c.releaseResources()
-}
-
-func (c *Client) clientLoop(reader *csv.Reader) {
+func (c *Client) betsTransmissionLoop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
 		if err == io.EOF {
 			c.keepProcessing = false
 			if !c.batchBuilder.IsEmpty() {
-				c.sendBatchAndConfirm()
+				c.protocol.SendLastBatch(c.batchBuilder)
 			}
 			continue
 		}
@@ -116,7 +125,7 @@ func (c *Client) clientLoop(reader *csv.Reader) {
 		}
 
 		if !c.batchBuilder.AddBet(bet) {
-			if c.sendBatchAndConfirm() != nil {
+			if c.protocol.sendBatchAndConfirm(c.batchBuilder) != nil {
 				break
 			}
 			c.batchBuilder.Reset()
@@ -124,22 +133,6 @@ func (c *Client) clientLoop(reader *csv.Reader) {
 
 		}
 	}
-}
-
-func (c *Client) sendBatchAndConfirm() error {
-	batch := c.batchBuilder.Build()
-	err := c.protocol.SendBytes(batch)
-	if err != nil {
-		log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", c.config.ID, err)
-		return err
-	}
-	log.Infof("action: send_batch | result: success | client_id: %v", c.config.ID)
-	codeError, err := c.protocol.ReceiveConfirmation()
-	if (err != nil && err != io.EOF) || !codeError {
-		log.Errorf("action: receive_confirmation | result: fail | client_id: %v | confirmation: %v | error: %v", c.config.ID, codeError, err)
-
-	}
-	return err
 }
 
 func (c *Client) registerSignalHandler() {
