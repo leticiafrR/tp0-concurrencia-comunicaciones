@@ -2,8 +2,8 @@ from .serializer import deserializeInt, deserializeString, serializeBool
 from socket import socket
 from .utils import Bet
 from typing import List, Optional
-AGENCY_EXAMPLE = "1"
 U16_SIZE = 2
+U8_SIZE =1
 
 class ClientDisconnectedException(Exception):
     pass
@@ -13,6 +13,11 @@ class ServerProtocol:
         self.__peer = conn
         self.__is_client_closed = False
         self.__expected_bets_current_batch: Optional[int] = None
+        self.meetClient()
+
+    def meetClient(self):
+        byte_agency = self.__receiveInt(U8_SIZE)
+        self.__agency = str(byte_agency)
 
     def sendConfirmation(self, flag: bool):
         f = serializeBool(flag)
@@ -33,7 +38,7 @@ class ServerProtocol:
         birthdate  = self.__receiveString()
         number=self.__receiveString()
         return Bet(
-            agency=AGENCY_EXAMPLE,
+            agency=self.__agency,
             first_name=first_name,
             last_name=last_name,
             document=document,
@@ -64,8 +69,11 @@ class ServerProtocol:
             totalRead += len(seq)
         return bytes(buf)
     
+    def __receiveInt(self, int_size: int) -> int:
+        return deserializeInt(self.__receiveBytes(int_size))
+    
     def __receiveString(self) -> str:
-        size = deserializeInt(self.__receiveBytes(U16_SIZE))
+        size = self.__receiveInt(U16_SIZE)
         return deserializeString(self.__receiveBytes(size))
 
     def __sendBytes(self, msg: bytes):

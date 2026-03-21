@@ -2,16 +2,32 @@ package common
 
 import (
 	"net"
+	"strconv"
 )
 
 type ClientProtocol struct {
-	conn net.Conn
+	conn     net.Conn
+	agencyID uint8
 }
 
-func NewClientProtocol(conn net.Conn) *ClientProtocol {
-	c := &ClientProtocol{conn}
+func NewClientProtocol(conn net.Conn, strAgencyID string) *ClientProtocol {
+	agencyID, err := strconv.Atoi(strAgencyID)
+	if err != nil {
+		log.Error("action: parse_agency_id | result: failure | error: " + err.Error())
+		agencyID = 0
+	}
+	return &ClientProtocol{conn, uint8(agencyID)}
 
-	return c
+}
+
+func (b *ClientProtocol) MeetClient() error {
+	agencyID := []byte{b.agencyID}
+	err := b.SendBytes(agencyID)
+	if err != nil {
+		log.Error("action: send_agency_id | result: failure | error: " + err.Error())
+		return err
+	}
+	return nil
 }
 
 func (b *ClientProtocol) ReceiveConfirmation() (bool, error) {

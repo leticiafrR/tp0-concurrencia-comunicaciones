@@ -68,7 +68,7 @@ func (c *Client) reserveResources() error {
 		log.Errorf("action: create_client_socket | result: fail | client_id: %v | error: %v", c.config.ID, err)
 		return err
 	}
-	c.protocol = NewClientProtocol(conn)
+	c.protocol = NewClientProtocol(conn, c.config.ID)
 	return nil
 }
 
@@ -92,6 +92,7 @@ func (c *Client) Run() {
 	}
 	c.registerSignalHandler()
 	reader := csv.NewReader(c.sourceFile)
+	c.protocol.MeetClient()
 	c.clientLoop(reader)
 	c.releaseResources()
 }

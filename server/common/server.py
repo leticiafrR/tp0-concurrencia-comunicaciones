@@ -13,6 +13,8 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self.protocol: Optional[ServerProtocol] = None
         self._keep_running = True
+        self._client_amount = 3
+        self._client_protocols = []
         self.__register_signal_handlers()
 
 
@@ -33,6 +35,7 @@ class Server:
             try:
                 peer = self.__accept_new_connection()
                 self.protocol = ServerProtocol(peer)
+                # self._client_protocols[]
                 self.__handle_client_connection()
             except Exception as e:
                 logging.error(f"action: iteration | result: fail | error: {e}")
