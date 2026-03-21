@@ -48,6 +48,28 @@
 >
 >Para correr el cliente se requiere que el compose indique un `envfile` con los campos necesarios para crear una *Bet*. Se adjuntó un [archivo de ejemplo](.env.example) que se emplea en el [generador de composes](compose-generator.py); asi mismo se sigue empleando la configuración `amount` y `period` para variar el comportamiento del cliente (de la misma forma que en los ejercicios anteriores).
 
+>### Ejercicio 6
+>El protocolo diseñado emplea una serialización de cada campo de una bet como una string, es decir, lo que representa una `Bet` se define por un conjunto de strings que cumplen con las restricciones numéricas y de datos temporales:
+>```go
+>type Bet struct {
+>	Name     string
+>	LastName string
+>	Document string //Numérico no negativo
+>	Date     string //YYYY-MM-DD
+>	Number   string //Numérico no negativo
+>}
+>```
+>Esta decisión se tomó para proveer mayor flexibilidad en caso de diferentes formatos, rangos de valores que puede tomar cada apuesta, etc. La serialización de cada string sigue el formato `<STRING_SIZE><STRING>` donde STRING_SIZE ocupa dos bytes encodeados Big Endian y el string encodeado según UTF-8.
+>Así mismo, el flujo de intercambio de mensajes entre cliente y servidor se mantiene siendo:
+>1. El cliente contacta al servidor mandando sus apuestas
+>2. El servidor responde con un código de un byte: 1 para confirmación, 0 para rechazo.
+>
+>Este protocolo además emplea una estrategia de encapsulación de batching de paquetes. Si el cliente desea enviar `T` apuestas, el PDU que se maneja a nivel aplicación es un batch que a priori contiene `n` o `m` apuestas:
+>- `n`, una cantidad constante de apuestas configurable que representa el máximo de apuestas que puede tener cada batch
+>- `m`, la cantidad de apuestas del último batch que el cliente debe enviar para terminar su programa
+>Estas dos cantidades nunca superan los 8kB, para mantener esta trazabilidad se empleó una abstracción `BatchBuilder` que encapsula el manejo de los límites previamente impuestos. Internamente esta abstracción realiza una estimación de cuántos bytes agregaría sumar una apuesta al batch, si agregar esta cantidad de bytes al batch constryendose no sobrepasa los 8kB y si es que la cantidad de apuestas permite agregar esta respetando la configuración entonces se le permite al cliente agregar la batch, caso contrario no se le permite agregar más, el cliente vuelca la batch en construcción para obtener la batch completa, la envía por medio del protocolo, resetea el constructor y está listo para seguir agregando apuestas.
+
+>### Ejercicio 7
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).

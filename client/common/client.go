@@ -92,22 +92,21 @@ func (c *Client) Run() {
 	}
 	c.registerSignalHandler()
 	reader := csv.NewReader(c.sourceFile)
-	c.loop(reader)
+	c.clientLoop(reader)
 	c.releaseResources()
 }
 
-func (c *Client) loop(reader *csv.Reader) {
+func (c *Client) clientLoop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
-		// log.Infof("action: read_record | result: success | client_id: %v", c.config.ID)
-
 		if err == io.EOF {
 			c.keepProcessing = false
 			if !c.batchBuilder.IsEmpty() {
 				c.sendBatchAndConfirm()
 			}
-			continue //ojo
+			continue
 		}
+
 		bet, err := NewBetFromRecord(record, log)
 
 		if err != nil {
