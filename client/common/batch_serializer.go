@@ -38,6 +38,15 @@ func (b *BatchSerializer) BuildBatch() []byte {
 	return b.batchBuffer
 }
 
+func (b *BatchSerializer) Reset() {
+	b.batchBuffer = reserveBatchBuffer(b.maxBytesByBatch)
+	b.cantBets = 0
+}
+
+func (b *BatchSerializer) IsEmpty() bool {
+	return b.cantBets == 0
+}
+
 func (b *BatchSerializer) canAddBet(betSize int) bool {
 	return (b.cantBets < b.maxBetsByBatch) && (len(b.batchBuffer)+betSize <= b.maxBytesByBatch)
 }
@@ -46,12 +55,4 @@ func reserveBatchBuffer(maxBatchSize int) []byte {
 	buff := make([]byte, U16_SIZE, maxBatchSize)
 	buff[IDX_TYPE_MSG] = TYPE_BATCH
 	return buff
-}
-
-func (b *BatchSerializer) Reset() {
-	b.batchBuffer = reserveBatchBuffer(b.maxBytesByBatch)
-	b.cantBets = 0
-}
-func (b *BatchSerializer) IsEmpty() bool {
-	return b.cantBets == 0
 }
