@@ -87,8 +87,7 @@ class Server:
                 self._client_protocols.pop(agency, None)
                 break
 
-
     def __store_bets(self, bets):
         store_bets(bets)
-        logging.info(f"action: store_bets | result: success | amount: {len(bets)}")
+        logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
    
