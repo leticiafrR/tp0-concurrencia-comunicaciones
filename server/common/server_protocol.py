@@ -3,7 +3,7 @@ from socket import socket
 from .utils import Bet
 from typing import List, Optional
 from .constants import *
-
+import logging
 
 class ClientDisconnectedException(Exception):
     pass
@@ -19,6 +19,7 @@ class ServerProtocol:
     def meetClient(self):
         byte_agency = self.__receiveInt(U8_SIZE)
         self.agency = str(byte_agency)
+        logging.info(f"action: meet_client | result: success | agency: {self.agency}")
 
     def sendConfirmation(self, flag: bool):
         f = serializeBool(flag)

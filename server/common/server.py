@@ -36,6 +36,8 @@ class Server:
                 peer = self.__accept_new_connection()
                 self.protocol = ServerProtocol(peer)#puede lanzar una excepción
                 self._client_protocols[self.protocol.agency] = self.protocol
+                logging.info(f"action: new_client_connected | result: success | agency: {self.protocol.agency} | total_clients: {len(self._client_protocols)} | max_clients: {self._cant_clients}")
+
             except Exception as e:
                 logging.error(f"action: iteration | result: fail | error: {e}")
                 break
@@ -46,6 +48,7 @@ class Server:
 
         
     def __process_all_bets(self):
+        logging.info("action: process_bets | result: in_progress")
         for clientID, protocol in list(self._client_protocols.items()):
             self.__process_bets_from_client(protocol, clientID)
 
