@@ -16,9 +16,12 @@ type BatchSerializer struct {
 }
 
 func NewBatchSerializer(maxBytesByBatch int) *BatchSerializer {
-	buffer := reserveBatchBuffer(MAX_BATCH_BYTES)
-	buffer[IDX_TYPE_MSG] = TYPE_BATCH //initialize buffer with 0s
-	return &BatchSerializer{batchBuffer: buffer, maxBytesByBatch: MAX_BATCH_BYTES, cantBets: 0, maxBetsByBatch: maxBytesByBatch}
+	return &BatchSerializer{
+		batchBuffer:     reserveBatchBuffer(MAX_BATCH_BYTES),
+		maxBytesByBatch: MAX_BATCH_BYTES,
+		cantBets:        0,
+		maxBetsByBatch:  maxBytesByBatch,
+	}
 }
 
 func (b *BatchSerializer) AddBet(bet *Bet) bool {
@@ -32,6 +35,7 @@ func (b *BatchSerializer) AddBet(bet *Bet) bool {
 
 func (b *BatchSerializer) BuildBatch() []byte {
 	b.batchBuffer[IDX_BETS_IN_BATCH] = uint8(b.cantBets)
+	log.Debugf("action : build_batch | result: success | bets: %d | bytes: %d", b.cantBets, len(b.batchBuffer))
 	return b.batchBuffer
 }
 
@@ -40,7 +44,9 @@ func (b *BatchSerializer) canAddBet(betSize int) bool {
 }
 
 func reserveBatchBuffer(maxBatchSize int) []byte {
-	return make([]byte, U8_SIZE, maxBatchSize)
+	buff := make([]byte, U16_SIZE, maxBatchSize)
+	buff[IDX_TYPE_MSG] = TYPE_BATCH
+	return buff
 }
 
 func (b *BatchSerializer) Reset() {

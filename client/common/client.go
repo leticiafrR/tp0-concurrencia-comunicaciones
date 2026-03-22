@@ -62,7 +62,7 @@ func (c *Client) Run() {
 	}
 	c.registerSignalHandler()
 	reader := csv.NewReader(c.sourceFile)
-	c.protocol.MeetClient()
+	c.protocol.MeetServer()
 	c.betsTransmissionLoop(reader)
 	c.consultWinners()
 	c.releaseResources()
@@ -109,6 +109,7 @@ func (c *Client) releaseResources() error {
 func (c *Client) betsTransmissionLoop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
+		log.Debugf("action : read_record | result: success | record: %v", record)
 		if err == io.EOF {
 			c.keepProcessing = false
 			if !c.batchBuilder.IsEmpty() {
@@ -130,7 +131,6 @@ func (c *Client) betsTransmissionLoop(reader *csv.Reader) {
 			}
 			c.batchBuilder.Reset()
 			c.batchBuilder.AddBet(bet)
-
 		}
 	}
 }
