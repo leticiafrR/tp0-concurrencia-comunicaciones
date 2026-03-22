@@ -1,5 +1,7 @@
 import sys
-HEADER_AND_SERVER_DEFINITION = """name: tp0
+
+def get_header_and_server_definition(num_clients):
+    return f"""name: tp0
 services:
   server:
     container_name: server
@@ -7,6 +9,7 @@ services:
     entrypoint: python3 /main.py
     environment:
       - PYTHONUNBUFFERED=1
+      - CANT_CLIENTS={num_clients}
     volumes:
       - ./server/config.ini:/config.ini
     networks:
@@ -62,7 +65,7 @@ def main():
   filename = get_filename(args)
   num_clients = get_num_clients(args)
   with open(filename, "w") as file:
-    file.write(HEADER_AND_SERVER_DEFINITION)
+    file.write(get_header_and_server_definition(num_clients))
     for i in range(1, num_clients + 1):
       file.write(get_client_definition(i))
     file.write(NETWORK_DEFINITION)

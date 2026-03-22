@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	U8_SIZE  = 1
-	U16_SIZE = 2
+	U8_SIZE             = 1
+	U16_SIZE            = 2
+	END_OF_TRANSMISSION = 0
 )
 
 type ClientProtocol struct {
@@ -64,8 +65,11 @@ func (b *ClientProtocol) SendLastBatch(batchBuilder *BatchSerializer) {
 }
 
 func (b *ClientProtocol) ReceiveWinners() ([]string, error) {
-	buff := make([]byte, 0, U8_SIZE)
-	b.receiveBytes(buff)
+	buff := make([]byte, U8_SIZE)
+	err := b.receiveBytes(buff)
+	if err != nil {
+		return nil, err
+	}
 	winnersAmount := uint8(buff[0])
 	winners := make([]string, 0, winnersAmount)
 	for i := 0; i < int(winnersAmount); i++ {
@@ -138,5 +142,5 @@ func (b *ClientProtocol) sendBatchAndConfirm(batchBuilder *BatchSerializer) erro
 }
 
 func (b *ClientProtocol) sendEndOfBetTransmission() error {
-	return b.sendBytes([]byte{0xFF})
+	return b.sendBytes([]byte{END_OF_TRANSMISSION})
 }

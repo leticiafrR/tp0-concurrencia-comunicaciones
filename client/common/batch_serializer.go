@@ -1,7 +1,11 @@
 package common
 
 const (
-	MAX_BATCH_BYTES = 8000
+	MAX_BATCH_BYTES   = 8000
+	IDX_BETS_IN_BATCH = 1
+	IDX_TYPE_MSG      = 0
+	TYPE_NOT_BATCH    = 0
+	TYPE_BATCH        = 1
 )
 
 type BatchSerializer struct {
@@ -13,8 +17,7 @@ type BatchSerializer struct {
 
 func NewBatchSerializer(maxBytesByBatch int) *BatchSerializer {
 	buffer := reserveBatchBuffer(MAX_BATCH_BYTES)
-	buffer[0] = 0 //initialize buffer with 0s
-	buffer[1] = 0
+	buffer[IDX_TYPE_MSG] = TYPE_BATCH //initialize buffer with 0s
 	return &BatchSerializer{batchBuffer: buffer, maxBytesByBatch: MAX_BATCH_BYTES, cantBets: 0, maxBetsByBatch: maxBytesByBatch}
 }
 
@@ -28,10 +31,7 @@ func (b *BatchSerializer) AddBet(bet *Bet) bool {
 }
 
 func (b *BatchSerializer) BuildBatch() []byte {
-	bytesSizeTmp := make([]byte, 0, TWO_BYTES)
-	bytesSizeTmp = SerializeUint16(uint16(b.cantBets), bytesSizeTmp)
-	b.batchBuffer[0] = bytesSizeTmp[0]
-	b.batchBuffer[1] = bytesSizeTmp[1]
+	b.batchBuffer[IDX_BETS_IN_BATCH] = uint8(b.cantBets)
 	return b.batchBuffer
 }
 
@@ -40,7 +40,7 @@ func (b *BatchSerializer) canAddBet(betSize int) bool {
 }
 
 func reserveBatchBuffer(maxBatchSize int) []byte {
-	return make([]byte, TWO_BYTES, maxBatchSize)
+	return make([]byte, U8_SIZE, maxBatchSize)
 }
 
 func (b *BatchSerializer) Reset() {
