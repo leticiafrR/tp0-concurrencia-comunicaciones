@@ -35,7 +35,6 @@ func (b *BatchSerializer) AddBet(bet *Bet) bool {
 
 func (b *BatchSerializer) BuildBatch() []byte {
 	b.batchBuffer[IDX_BETS_IN_BATCH] = uint8(b.cantBets)
-	// log.Debugf("action : build_batch | result: success | bets: %d | bytes: %d", b.cantBets, len(b.batchBuffer))
 	return b.batchBuffer
 }
 
