@@ -132,13 +132,13 @@ func (b *ClientProtocol) sendBatchAndConfirm(batchBuilder *BatchSerializer) erro
 		log.Errorf("action: send_batch | result: fail | client_id: %v | error: %v", b.agencyID, err)
 		return err
 	}
-	log.Debugf("action: send_batch | result: success | client_id: %v", b.agencyID)
+	// log.Debugf("action: send_batch | result: success | client_id: %v", b.agencyID)
 	codeError, err := b.ReceiveConfirmation()
 	if (err != nil && err != io.EOF) || !codeError {
 		log.Errorf("action: receive_confirmation | result: fail | client_id: %v | confirmation: %v | error: %v", b.agencyID, codeError, err)
 
 	}
-	log.Debugf("action: receive_confirmation | result: success | client_id: %v | confirmation: %v", b.agencyID, codeError)
+	// log.Debugf("action: receive_confirmation | result: success | client_id: %v | confirmation: %v", b.agencyID, codeError)
 	return err
 }
 
