@@ -34,8 +34,8 @@ class Server:
             try:
                 peer, addr = self._server_socket.accept()
                 logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-                self.protocol = ServerProtocol(peer)#puede lanzar una excepción
-                self._client_protocols[self.protocol.agency] = self.protocol
+                protocol = ServerProtocol(peer)#puede lanzar una excepción
+                self._client_protocols[protocol.agency] = protocol
             except Exception as _:
                 logging.error(f'action: accept_connections | result: fail | ip: {addr[0]}')
                 break
