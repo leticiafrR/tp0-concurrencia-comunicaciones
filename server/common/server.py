@@ -11,7 +11,6 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        # self.protocol: Optional[ServerProtocol] = None
         self._keep_running = True
         self._cant_clients = cant_clients
         self._client_protocols = {}
@@ -31,8 +30,9 @@ class Server:
         os._exit(0)
 
     def run(self):
-        while self._keep_running and len(self._client_protocols) < self._cant_clients:
+        while self._keep_running and (len(self._client_protocols) < self._cant_clients):
             try:
+                logging.info(f"\nAnother iteration for accepting clients ({len(self._client_protocols)}<{self._cant_clients})\n")
                 peer = self.__accept_new_connection()
                 self.protocol = ServerProtocol(peer)#puede lanzar una excepción
                 self._client_protocols[self.protocol.agency] = self.protocol
@@ -41,18 +41,18 @@ class Server:
             except Exception as e:
                 logging.error(f"action: iteration | result: fail | error: {e}")
                 break
+        logging.info("\nFinished accepting clients\n")
         self.__process_all_bets()
         winners_by_agency = self.__define_winners()
         self.__spread_winners(winners_by_agency)
-
 
         
     def __process_all_bets(self):
         logging.info("action: process_bets | result: in_progress")
         for clientID, protocol in list(self._client_protocols.items()):
+            logging.info(f"action: process_bet | result: in_progress | agency: {clientID}")
             self.__process_bets_from_client(protocol, clientID)
 
-    
     
     def __define_winners(self):
         winners_by_agency = {}
@@ -65,8 +65,8 @@ class Server:
                 winners_by_agency[agency] = []
 
             winners_by_agency[agency].append(bet.document)
-
         return winners_by_agency
+
 
     def __spread_winners(self, winners_by_agency):
         for agency, protocol in self._client_protocols.items():
@@ -86,14 +86,11 @@ class Server:
                     break
                 bets = protocol.receiveBatch()
                 store_bets(bets)
-                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
                 protocol.sendConfirmation(True)
             except ClientDisconnectedException as e:
                 # debo apagar el cliente y eliminar del diccionario su protocolo
                 protocol.shutdown()
                 self._client_protocols.pop(agency, None)
-                logging.error(f"action: apuesta_recibida | result: fail  | agency: {agency} | error: client disconnected")
-                logging.info("action: close_connection | result: success")
                 break
             
 
