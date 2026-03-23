@@ -1,5 +1,5 @@
+import logging
 import threading
-
 
 class ClientsMonitor:
     def __init__(self):
@@ -29,9 +29,17 @@ class ClientsMonitor:
         for client in clients:
             client.shutdown()
 
+    def join_all_clients(self):
+        with self._clients_lock:
+            clients = list(self._clients.values())
+
+        for client in clients:
+            client.join()
+
     def spread_winners(self, winners_by_agency: dict[str, list[str]]):
         with self._clients_lock:
             clients = list(self._clients.items())
 
         for agency, client in clients:
-            client.receive_winners(winners_by_agency.get(agency, []))
+            winners = winners_by_agency.get(agency, [])
+            client.receive_winners(winners)

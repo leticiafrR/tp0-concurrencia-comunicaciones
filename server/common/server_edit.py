@@ -65,7 +65,7 @@ class Server:
             return
         winners_by_agency = self.__define_winners()
         self._clients_manager.spread_winners(winners_by_agency)
-        self._clients_manager.stopClients()
+        self._clients_manager.join_all_clients()
   
     def __define_winners(self):
         winners_by_agency = {}

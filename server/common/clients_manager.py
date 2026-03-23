@@ -38,6 +38,9 @@ class ClientsManager:
         except BrokenBarrierError:
             pass
 
+    def join_all_clients(self):
+        self._clients_monitor.join_all_clients()
+        
     def wait_for_storing_all_bets(self):
         self._all_bets_received_barrier.wait()
 

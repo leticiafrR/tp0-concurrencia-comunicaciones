@@ -1,15 +1,11 @@
 from .bets_store_monitor import BetsStoreMonitor
-
 from .server_protocol import ServerProtocol, ClientDisconnectedException
 import threading
 from queue import Queue
 from socket import socket
 from threading import Event, Barrier,BrokenBarrierError
 import logging
-"""
-Todos los recursos asociados a un cliente (socket, thread, queue) se encuentran en esta clase.
-tiene el accesos al monitor de clientes para eliminarse a si mismo cuando se desconecta.
-"""
+
 class Client:
     def __init__(self,
                 peer: socket,
@@ -32,7 +28,10 @@ class Client:
 
     def shutdown(self):
         self.protocol.shutdown()
-        self.thread.join(timeout=2)
+        self.thread.join()
+
+    def join(self):
+        self.thread.join()
 
     def __keep_running(self) -> bool:
         return not self.shutdown_event.is_set()
