@@ -32,7 +32,6 @@ type ClientConfig struct {
 // Client Entity that encapsulates how
 type Client struct {
 	config         ClientConfig
-	bet            *Bet
 	shutdownChan   chan struct{}
 	protocol       *ClientProtocol
 	sourceFile     *os.File
@@ -109,11 +108,9 @@ func (c *Client) releaseResources() error {
 func (c *Client) betsTransmissionLoop(reader *csv.Reader) {
 	for c.keepProcessing {
 		record, err := reader.Read()
-		// log.Debugf("action : read_record | result: success | record: %v", record)
 		if err == io.EOF {
 			c.keepProcessing = false
 			if !c.batchBuilder.IsEmpty() {
-				// log.Debugf("\naction : sending_last_batch | result: success | bets: %d | bytes: %d", c.batchBuilder.cantBets, len(c.batchBuilder.batchBuffer))
 				c.protocol.SendLastBatch(c.batchBuilder)
 			}
 			continue

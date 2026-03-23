@@ -3,7 +3,6 @@ import socket
 import logging
 import signal
 from .server_protocol import ClientDisconnectedException, ServerProtocol
-from typing import Optional
 from .utils import store_bets, load_bets, has_won
 
 class Server:
@@ -15,19 +14,6 @@ class Server:
         self._cant_clients = cant_clients
         self._client_protocols = {}
         self.__register_signal_handlers()
-
-
-    def __register_signal_handlers(self):
-        signal.signal(signal.SIGTERM, self.shutdown)
-
-    def shutdown(self, signum, frame):
-        self._keep_running = False
-        self._server_socket.close()
-        logging.info("action: close_connection | result: success")
-        for protocol in self._client_protocols.values():
-            protocol.shutdown()
-            logging.info("action: close_connection | result: success")
-        os._exit(0)
 
     def run(self):
         while self._keep_running and (len(self._client_protocols) < self._cant_clients):
@@ -90,4 +76,15 @@ class Server:
     def __store_bets(self, bets):
         store_bets(bets)
         logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-   
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGTERM, self.shutdown)
+
+    def shutdown(self, signum, frame):
+        self._keep_running = False
+        self._server_socket.close()
+        logging.info("action: close_connection | result: success")
+        for protocol in self._client_protocols.values():
+            protocol.shutdown()
+            logging.info("action: close_connection | result: success")
+        os._exit(0)
