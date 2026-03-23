@@ -17,3 +17,13 @@ def serializeUint16(num: int) -> bytes:
 def serializeString(value: str) -> bytes:
     encoded_value = value.encode('utf-8')
     return serializeUint16(len(encoded_value)) + encoded_value
+
+def serializeWinners(winners: list[str]) -> bytes:
+    if len(winners) > 255:
+        raise ValueError("too many winners for one agency")
+
+    payload = bytearray()
+    payload.extend(serializeUint8(len(winners)))
+    for winner_document in winners:
+        payload.extend(serializeString(winner_document))
+    return bytes(payload)

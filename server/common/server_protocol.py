@@ -1,4 +1,4 @@
-from .serializer import deserializeInt, deserializeString, serializeBool, serializeUint8, serializeString
+from .serializer import deserializeInt, deserializeString, serializeBool, serializeWinners
 from socket import socket
 from .utils import Bet
 from typing import List, Optional
@@ -26,11 +26,7 @@ class ServerProtocol:
     def sendWinners(self, winners: List[str]):
         if len(winners) > 255:
             raise ValueError("too many winners for one agency")
-
-        payload = bytearray()
-        payload.extend(serializeUint8(len(winners)))
-        for winner_document in winners:
-            payload.extend(serializeString(winner_document))
+        payload = serializeWinners(winners)
         self.__sendBytes(bytes(payload))
 
     def receiveBatch(self) -> List[Bet]:
