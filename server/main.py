@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-
 from configparser import ConfigParser
+from common.server import Server
 import logging
 import os
-from server.common.server import Server
-
 
 def initialize_config():
     """ Parse env variables or config file to find program config params
