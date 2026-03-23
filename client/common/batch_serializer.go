@@ -52,6 +52,7 @@ func (b *BatchSerializer) Reset() {
 	b.batchBuffer = reserveBatchBuffer(b.maxBytesByBatch)
 	b.cantBets = 0
 }
+
 func (b *BatchSerializer) IsEmpty() bool {
 	return b.cantBets == 0
 }

@@ -23,7 +23,6 @@ class Server:
         self._shutdown_event = threading.Event()
         self.__register_signal_handlers()
 
-
     def __register_signal_handlers(self):
         signal.signal(signal.SIGTERM, self.shutdown)
 

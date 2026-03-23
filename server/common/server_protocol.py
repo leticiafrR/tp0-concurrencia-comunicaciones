@@ -36,18 +36,14 @@ class ServerProtocol:
 
     def receiveBatch(self) -> List[Bet]:
         self.__expected_bets_current_batch = self.__receiveBatchSize()
-        # logging.debug(f"action: define_batch_size | result: success | cant_bets_expected: {self.__expected_bets_current_batch} | agency: {self.agency}")
         bets = []
         for _ in range(self.__expected_bets_current_batch):
             bet = self.__receiveBet()
             bets.append(bet)
-            # logging.debug(f"action: received_bet | result: success | bet: {bet} | bet_number: {_+1} | total_bets: {self.__expected_bets_current_batch}")
-            # logging.debug(f"bet: {bet.__dict__}")
         return bets
     
     def isEndOfTransmission(self) -> bool:
         end = (self.__receiveInt(U8_SIZE) == TYPE_END_OF_TRANSMISSION)
-        # logging.debug(f"action: check_end_of_transmission | result: success | is_end_of_batch_transmission: {end} | agency: {self.agency}")
         return end
           
     def shutdown(self)->bool:
@@ -56,7 +52,6 @@ class ServerProtocol:
             self.__peer.close()
             return True
         return False
-
 
     def __receiveBet(self) -> Bet:
         first_name=self.__receiveString()
@@ -86,7 +81,6 @@ class ServerProtocol:
                 raise ClientDisconnectedException()
             buf[totalRead:totalRead + len(seq)] = seq
             totalRead += len(seq)
-            # logging.debug(f"action: parcial_bytes_receiving | result: success | bytes_received: {totalRead}/{nBytes}")
         return bytes(buf)
     
     def __receiveInt(self, int_size: int) -> int:
