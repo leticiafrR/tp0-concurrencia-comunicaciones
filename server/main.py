@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 from configparser import ConfigParser
-from common.server_edit import Server
 import logging
 import os
+from server.common.server import Server
 
 
 def initialize_config():
