@@ -3,7 +3,6 @@ from socket import socket
 from .utils import Bet
 from typing import List, Optional
 from .constants import *
-import logging
 
 class ClientDisconnectedException(Exception):
     pass

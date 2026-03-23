@@ -4,6 +4,8 @@ import logging
 import signal
 import threading
 import queue
+
+from server.common.client import Client
 from .server_protocol import ClientDisconnectedException, ServerProtocol
 from .utils import store_bets, load_bets, has_won
 
@@ -13,13 +15,13 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._keep_running = True
-        self._cant_clients = cant_clients
-        self._client_protocols = {}
-        self._client_threads = []
-        self._winners_queues = {}
-        self._clients_lock = threading.Lock()
+        self._cant_clients = cant_clients#
+        self._client_protocols = {}#
+        self._client_threads = []#
+        self._winners_queues = {}#
+        self._clients_lock = threading.Lock()# maybe usarse en el client manager para que sea como un monitor 
         self._store_lock = threading.Lock()
-        self._threads_barrier = threading.Barrier(self._cant_clients + 1)
+        self._threads_barrier = threading.Barrier(self._cant_clients + 1)#
         self._shutdown_event = threading.Event()
         self.__register_signal_handlers()
 
@@ -56,27 +58,32 @@ class Server:
 
     def run(self):
         while self._keep_running:
+            #########################################################MANAGER
             with self._clients_lock:
                 if len(self._client_protocols) >= self._cant_clients:
                     break
 
-            addr = ("unknown", 0)
+            # addr = ("unknown", 0)
             try:
                 peer, addr = self._server_socket.accept()
                 logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-
                 protocol = ServerProtocol(peer)
                 winners_queue = queue.Queue(maxsize=1)
-
-                with self._clients_lock:
-                    self._client_protocols[protocol.agency] = protocol
-                    self._winners_queues[protocol.agency] = winners_queue
-
                 client_thread = threading.Thread(
                     target=self.__process_bets_from_client,
                     args=(protocol, protocol.agency, winners_queue),
                     daemon=True,
                 )
+                # client = Client(protocol, winners_queue)
+
+
+                #>>>>>>>>>>>>CLIENTS MANAGER.ADD_CLIENT<<<<<<<<<<
+                with self._clients_lock:
+                    self._client_protocols[protocol.agency] = protocol
+                    self._winners_queues[protocol.agency] = winners_queue
+                #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>S
+
+
                 self._client_threads.append(client_thread)
                 client_thread.start()
             except Exception as _:
@@ -167,6 +174,8 @@ class Server:
         except Exception as e:
             logging.error(f"action: send_winners | result: fail | agency: {agency} | error: {e}")
 
+
+######>>>>>>>>>>>>>CLIENT
     def __store_bets(self, bets):
         with self._store_lock:
             store_bets(bets)
