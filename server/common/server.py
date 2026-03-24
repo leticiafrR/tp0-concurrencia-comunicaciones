@@ -1,58 +1,78 @@
+import os
 import socket
 import logging
+import signal
+import threading
 
+from .clients_manager import ClientsManager
+from .utils import load_bets, has_won
 
 class Server:
-    def __init__(self, port, listen_backlog):
-        # Initialize server socket
+    def __init__(self, port, listen_backlog, cant_clients):
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._keep_running = True
+        self._cant_clients = cant_clients
+        self.__register_signal_handlers()
+        self._clients_manager = ClientsManager(cant_clients, threading.Event(),threading.Barrier(self._cant_clients + 1))
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGTERM, self.shutdown)
+
+    def shutdown(self, signum, frame):
+        self._keep_running = False
+        self._clients_manager.stopClients()
+        try:
+            self._server_socket.close()
+        except OSError:
+            pass
+        logging.info("action: close_connection | result: success")
+        if signum is not None:
+            os._exit(0)
+
+    def receive_clients(self):
+        while self._keep_running and not self._clients_manager.are_all_clients_connected():
+            try:
+                peer, addr = self._server_socket.accept()
+                logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+                self._clients_manager.add_client(peer)
+            except OSError:
+                if self._keep_running:
+                    logging.error('action: accept_connections | result: fail | reason: socket_closed')
+                break
+            except Exception as _:
+                logging.error('action: accept_connections | result: fail')
+                self.shutdown(None, None)
+                break
 
     def run(self):
-        """
-        Dummy Server loop
+        self.receive_clients()
 
-        Server that accept a new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
-        """
+        if not self._keep_running:
+            return
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
-        while True:
-            client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(client_sock)
+        if not self._clients_manager.are_all_clients_connected():
+            self._clients_manager.stopClients()
+            return
 
-    def __handle_client_connection(self, client_sock):
-        """
-        Read message from a specific client socket and closes the socket
-
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
-        """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = client_sock.recv(1024).rstrip().decode('utf-8')
-            addr = client_sock.getpeername()
-            logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
-            # TODO: Modify the send to avoid short-writes
-            client_sock.send("{}\n".format(msg).encode('utf-8'))
-        except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
-        finally:
-            client_sock.close()
+            self._clients_manager.wait_for_storing_all_bets()
+        except threading.BrokenBarrierError:
+            self._clients_manager.stopClients()
+            return
+        winners_by_agency = self.__define_winners()
+        self._clients_manager.spread_winners(winners_by_agency)
+        self._clients_manager.join_all_clients()
+  
+    def __define_winners(self):
+        winners_by_agency = {}
+        for bet in load_bets():
+            if not has_won(bet):
+                continue
+            agency = str(bet.agency)
+            if agency not in winners_by_agency:
+                winners_by_agency[agency] = []
 
-    def __accept_new_connection(self):
-        """
-        Accept new connections
-
-        Function blocks until a connection to a client is made.
-        Then connection created is printed and returned
-        """
-
-        # Connection arrived
-        logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+            winners_by_agency[agency].append(bet.document)
+        return winners_by_agency
