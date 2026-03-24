@@ -99,40 +99,40 @@
 >    direction LR
 >
 >    class Server {
->      -_threads_barrier: Barrier
->      +run()
->      -define_winners()
+>      + run()
+>      + receive_clients()
+>      - define_winners()
 >    }
 >
 >    class ClientsManager {
->      -_all_bets_received_barrier: Barrier
->      +add_client(peer)
->      +wait_for_storing_all_bets()
->      +spread_winners(winners_by_agency)
+>      - _all_bets_received_barrier: Barrier
+>      + add_client(peer)
+>      + wait_for_storing_all_bets()
+>      + spread_winners(winners_by_agency)
 >    }
 >
 >    class ClientsMonitor {
->      -_clients_lock: Lock
->      -_clients: dict~agency,Client~
->      +add_client(client)
->      +delete_client(agency)
->      +spread_winners(winners_by_agency)
+>      - _clients_lock: Lock
+>      - _clients: dict~agency,Client~
+>      + add_client(client)
+>      + delete_client(agency)
+>      + spread_winners(winners_by_agency)
 >    }
 >
 >    class Client {
->      -winners_queue: Queue~list~string~~
->      -all_bets_received_barrier: Barrier
->      +process_bets_from_client()
+>      - winners_queue: Queue~list~string~~
+>      - all_bets_received_barrier: Barrier
+>      + process_bets_from_client()
 >    }
 >
 >    class BetsStoreMonitor {
->      -_lock: Lock
->      +store(bets)
+>      - _lock: Lock
+>      + store(bets)
 >    }
 >
 >    class ServerProtocol {
->      +receiveBatch()
->      +sendWinners(winners)
+>      + receiveBatch()
+>      + sendWinners(winners)
 >    }
 >
 >    Server --> ClientsManager : coordina ciclo global
