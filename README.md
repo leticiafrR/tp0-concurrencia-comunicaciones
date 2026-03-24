@@ -70,6 +70,21 @@
 >Estas dos cantidades nunca superan los 8kB, para mantener esta trazabilidad se empleó una abstracción `BatchBuilder` que encapsula el manejo de los límites previamente impuestos. Internamente esta abstracción realiza una estimación de cuántos bytes agregaría sumar una apuesta al batch, si agregar esta cantidad de bytes al batch constryendose no sobrepasa los 8kB y si es que la cantidad de apuestas permite agregar esta respetando la configuración entonces se le permite al cliente agregar la batch, caso contrario no se le permite agregar más, el cliente vuelca la batch en construcción para obtener la batch completa, la envía por medio del protocolo, resetea el constructor y está listo para seguir agregando apuestas.
 
 >### Ejercicio 7
+>Para el presente ejercicio se tomaron las siguientes medidas ante las siguientes restricciones:
+>
+>1. <u>**Restricción**</u>: Los clientes notifican al servidor al finalizar con el envío de apuestas.
+> <u>**Medida**</u>: Los primeros mensajes del cliente tienen una flag en su header que se apaga cuando ya no se trata de mensajes con apuestas
+
+>2. <u>**Restricción**</u>: El servidor debe esperar la notificación de las 5 agencias para poder calcular los ganadores de cada agencia.
+><u>**Medida**</u>: El servidor procesa el envío de apuestas secuencialmente hasta que el último cliente envía su notificación, recién entonces se emplean las funciones `load_bets(...)` y `has_won(...)` para obtener un diccionario con todos los ganadores de cada agencia (`winners_by_agency = {agency: [DNI]}`).
+
+>3. <u>**Restricción**</u>: Habiendo calculado los ganadores de cada agencia, el servidor informa los DNIs ganadores que corresponde a cada una de las agencias desde la cual se recibieron las apuestas
+><u>**Medida**</u>: Teniendo los resultados del sorteo (`winners_by_agency`) el servidor emplea las conexiones previamente establecida con las agencias para enviar a cada uno un array con los ganadores de la respectiva agencia. Por otro lado, para la serialización del array de DNIs ganadores se serializó primero la cantidad de ganadores en 1 byte (asumiendo que hay menos de 255 ganadores que para este escenario parece razonable) y cada string con el mismo formato mencionado previamente `<string_size><string>` (donde `string_size` ocupa 2 bytes, está encodeado como un unsigned16 en bigendian y el string se encodeó con UTF-8).
+
+>Es decir, los batches enviados por el cliente ahora se codifican de la siguiente forma:
+>![Serialización de un batch](doc/batch_serialized.png)
+>Donde el *"tipo de mensaje"* es binario y se consume antes de tratar de consumir una batch, vale `1` en el caso de un batch y vale `0` en caso de querer notificar el fin de la transmisión. Por otro lado, cada batch emitido por el cliente recibe su confirmación del servidor al igual que en el ejercicio anterior: `1` cuando llegó todo correctamente y `0` para indicar algún error.
+
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).
