@@ -85,6 +85,111 @@
 >![Serialización de un batch](doc/batch_serialized.png)
 >Donde el *"tipo de mensaje"* es binario y se consume antes de tratar de consumir una batch, vale `1` en el caso de un batch y vale `0` en caso de querer notificar el fin de la transmisión. Por otro lado, cada batch emitido por el cliente recibe su confirmación del servidor al igual que en el ejercicio anterior: `1` cuando llegó todo correctamente y `0` para indicar algún error.
 
+>### Ejercicio 8
+>Para este ejercicio el protocolo no cambió, los cambios integrados solo abarcan el funcionamiento interno del servidor. Para agregar concurrencia se empleó multithreading (teniendo en cuenta las limitaciones del lenguaje), así mismo se emplearon diferentes IPCs para la sincronización de los diferentes threads:
+>- un lock para proteger el acceso al archivo donde se guardan las apuestas
+>- un lock para proteger el accesos al diccionario donde se guardan los clientes (Debido a desconexiones inesperadas de los clientes)
+>- una barrera para garantizar un punto de encuentro entre el main thread y los threads asociados a cada cliente
+>- una queue bloqueante para comunicar a cada *client-thread* los ganadores que debe enviar mediante un socket a la agencia-go.
+
+>Las responsabilidades se organizaron de forma que:
+>
+>```mermaid
+>classDiagram
+>    direction LR
+>
+>    class Server {
+>      +run()
+>      +receive_clients()
+>      +shutdown()
+>      -define_winners()
+>      usa Barrier (all_bets_received)
+>      usa Event (shutdown_event)
+>    }
+>
+>    class ClientsManager {
+>      +add_client(peer)
+>      +wait_for_storing_all_bets()
+>      +spread_winners(winners_by_agency)
+>      +stopClients()
+>      +join_all_clients()
+>      orquesta clientes y sincronización
+>    }
+>
+>    class ClientsMonitor {
+>      +add_client(client)
+>      +delete_client(agency)
+>      +spread_winners(winners_by_agency)
+>      +stop_all_clients()
+>      +join_all_clients()
+>      usa Lock (_clients_lock)
+>    }
+>
+>    class Client {
+>      +shutdown()
+>      +join()
+>      +receive_winners(winners)
+>      +process_bets_from_client()
+>      usa Queue (winners_queue)
+>      espera Barrier (all_bets_received)
+>    }
+>
+>    class BetsStoreMonitor {
+>      +store(bets)
+>      usa Lock (_lock)
+>    }
+>
+>    class ServerProtocol {
+>      +receiveBatch()
+>      +sendConfirmation(flag)
+>      +sendWinners(winners)
+>      +isEndOfTransmission()
+>      +shutdown()
+>    }
+>
+>    class IPC_Barrier {
+>      <<IPC>>
+>      thread rendezvous
+>    }
+>
+>    class IPC_LockClients {
+>      <<IPC>>
+>      protege diccionario de clientes
+>    }
+>
+>    class IPC_LockBets {
+>      <<IPC>>
+>      serializa escritura de apuestas
+>    }
+>
+>    class IPC_WinnersQueue {
+>      <<IPC>>
+>      entrega ganadores por agencia
+>    }
+>
+>    class IPC_ShutdownEvent {
+>      <<IPC>>
+>      señal de apagado coordinado
+>    }
+>
+>    Server --> ClientsManager : delega ciclo de clientes
+>    ClientsManager --> ClientsMonitor : administra estado clientes
+>    ClientsManager --> BetsStoreMonitor : inyecta persistencia segura
+>    ClientsManager --> Client : crea instancias
+>    Client --> ServerProtocol : I/O por socket
+>    Client --> BetsStoreMonitor : store(bets)
+>
+>    Server ..> IPC_Barrier : crea/usa
+>    ClientsManager ..> IPC_Barrier : espera/aborta
+>    Client ..> IPC_Barrier : wait/abort
+>
+>    ClientsMonitor ..> IPC_LockClients : lock de acceso
+>    BetsStoreMonitor ..> IPC_LockBets : lock de escritura
+>    Client ..> IPC_WinnersQueue : put/get winners
+>    Server ..> IPC_ShutdownEvent : set on shutdown
+>    Client ..> IPC_ShutdownEvent : check keep_running
+>```
+
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).
