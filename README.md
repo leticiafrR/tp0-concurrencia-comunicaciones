@@ -99,95 +99,48 @@
 >    direction LR
 >
 >    class Server {
+>      -_threads_barrier: Barrier
 >      +run()
->      +receive_clients()
->      +shutdown()
 >      -define_winners()
->      usa Barrier (all_bets_received)
->      usa Event (shutdown_event)
 >    }
 >
 >    class ClientsManager {
+>      -_all_bets_received_barrier: Barrier
 >      +add_client(peer)
 >      +wait_for_storing_all_bets()
 >      +spread_winners(winners_by_agency)
->      +stopClients()
->      +join_all_clients()
->      orquesta clientes y sincronización
 >    }
 >
 >    class ClientsMonitor {
+>      -_clients_lock: Lock
+>      -_clients: dict~agency,Client~
 >      +add_client(client)
 >      +delete_client(agency)
 >      +spread_winners(winners_by_agency)
->      +stop_all_clients()
->      +join_all_clients()
->      usa Lock (_clients_lock)
 >    }
 >
 >    class Client {
->      +shutdown()
->      +join()
->      +receive_winners(winners)
+>      -winners_queue: Queue~list~string~~
+>      -all_bets_received_barrier: Barrier
 >      +process_bets_from_client()
->      usa Queue (winners_queue)
->      espera Barrier (all_bets_received)
 >    }
 >
 >    class BetsStoreMonitor {
+>      -_lock: Lock
 >      +store(bets)
->      usa Lock (_lock)
 >    }
 >
 >    class ServerProtocol {
 >      +receiveBatch()
->      +sendConfirmation(flag)
 >      +sendWinners(winners)
->      +isEndOfTransmission()
->      +shutdown()
 >    }
 >
->    class IPC_Barrier {
->      <<IPC>>
->      thread rendezvous
->    }
->
->    class IPC_LockClients {
->      <<IPC>>
->      protege diccionario de clientes
->    }
->
->    class IPC_LockBets {
->      <<IPC>>
->      serializa escritura de apuestas
->    }
->
->    class IPC_WinnersQueue {
->      <<IPC>>
->      entrega ganadores por agencia
->    }
->
->    class IPC_ShutdownEvent {
->      <<IPC>>
->      señal de apagado coordinado
->    }
->
->    Server --> ClientsManager : delega ciclo de clientes
->    ClientsManager --> ClientsMonitor : administra estado clientes
->    ClientsManager --> BetsStoreMonitor : inyecta persistencia segura
->    ClientsManager --> Client : crea instancias
->    Client --> ServerProtocol : I/O por socket
->    Client --> BetsStoreMonitor : store(bets)
->
->    Server ..> IPC_Barrier : crea/usa
->    ClientsManager ..> IPC_Barrier : espera/aborta
->    Client ..> IPC_Barrier : wait/abort
->
->    ClientsMonitor ..> IPC_LockClients : lock de acceso
->    BetsStoreMonitor ..> IPC_LockBets : lock de escritura
->    Client ..> IPC_WinnersQueue : put/get winners
->    Server ..> IPC_ShutdownEvent : set on shutdown
->    Client ..> IPC_ShutdownEvent : check keep_running
+>    Server --> ClientsManager : coordina ciclo global
+>    ClientsManager --> ClientsMonitor : administra clientes (Lock)
+>    ClientsManager --> Client : crea/espera threads
+>    Client --> BetsStoreMonitor : persiste bets (Lock)
+>    Client --> ServerProtocol : I/O socket
+>    Client --> ClientsManager : sincroniza fin (Barrier)
 >```
 
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
