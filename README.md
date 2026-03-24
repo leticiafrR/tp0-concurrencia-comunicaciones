@@ -143,6 +143,8 @@
 >    Client --> ClientsManager : sincroniza fin (Barrier)
 >```
 
+>El flujo interno que se sigue del lado del servidor es asi: el `Server` acepta las conexiones y delega en `ClientsManager` la creación de un `Client` (una entidad viva) asi como la realización de un handshake inicial para conocer el agency del cliente, mientras `ClientsMonitor` registra esas instancias de forma segura con un `Lock`. Cada `Client` recibe batches desde su socket (`ServerProtocol`), persiste sus apuestas a través de `BetsStoreMonitor` (que serializa escrituras con otro `Lock`) y, al terminar con la recepción de batches, todos los hilos se sincronizan en la `Barrier` para garantizar que el sorteo se calcule con información completa. Luego `Server` define los ganadores, `ClientsManager` distribuye a cada `Client` únicamente su lista mediante la `Queue` asociada, y cada hilo envía ese resultado a su agencia.
+
 En el presente repositorio se provee un esqueleto básico de cliente/servidor, en donde todas las dependencias del mismo se encuentran encapsuladas en containers. Los alumnos deberán resolver una guía de ejercicios incrementales, teniendo en cuenta las condiciones de entrega descritas al final de este enunciado.
 
  El cliente (Golang) y el servidor (Python) fueron desarrollados en diferentes lenguajes simplemente para mostrar cómo dos lenguajes de programación pueden convivir en el mismo proyecto con la ayuda de containers, en este caso utilizando [Docker Compose](https://docs.docker.com/compose/).
