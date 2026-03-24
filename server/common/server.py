@@ -14,10 +14,8 @@ class Server:
         self._server_socket.listen(listen_backlog)
         self._keep_running = True
         self._cant_clients = cant_clients
-        self._threads_barrier = threading.Barrier(self._cant_clients + 1)
-        self._shutdown_event = threading.Event()
         self.__register_signal_handlers()
-        self._clients_manager = ClientsManager(cant_clients, self._shutdown_event,self._threads_barrier)
+        self._clients_manager = ClientsManager(cant_clients, threading.Event(),threading.Barrier(self._cant_clients + 1))
 
     def __register_signal_handlers(self):
         signal.signal(signal.SIGTERM, self.shutdown)
